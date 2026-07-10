@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #162744;
+  --color-steel-blue: #2F4F6B;
+  --color-concrete-gray: #8B939D;
+  --color-light-gray: #F5F6F8;
+  --color-gold: #C89B3C;
+  --color-charcoal: #2E3135;
+  
+  --color-bg-body: #FFFFFF;
+  --color-bg-card: #FFFFFF;
+  --color-bg-section: #F5F6F8;
+  --color-text-primary: #162744;
+  --color-text-secondary: #2F4F6B;
+  
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: 'Playfair Display', serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-body);
+}
+
+.shadow-custom {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+}
+
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fadeInSlideUp 0.5s ease-out forwards;
+}
+
+

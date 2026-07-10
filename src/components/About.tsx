@@ -1,0 +1,46 @@
+import { Check } from 'lucide-react';
+
+export function About() {
+  return (
+    <section id="about" className="py-20">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-12">
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">About Glasswater</h2>
+          <p className="text-steel-blue text-lg">Integrated excellence in engineering and fit‑out</p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div>
+            <p className="text-lg text-charcoal mb-6">
+              We are an integrated construction, engineering, interior fit‑out and facilities management company delivering commercial, industrial, hospitality, institutional and residential projects across West Africa.
+            </p>
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-center gap-3">
+                <Check className="text-gold w-5 h-5 shrink-0" />
+                <span>Precision, Integrity, Safety, Innovation</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Check className="text-gold w-5 h-5 shrink-0" />
+                <span>Quality, Professionalism, Accountability, Reliability</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Check className="text-gold w-5 h-5 shrink-0" />
+                <span>Vision: West Africa’s most trusted fit‑out and building solutions company</span>
+              </li>
+            </ul>
+            <a href="#" className="inline-block bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-wide hover:bg-navy hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              Learn More
+            </a>
+          </div>
+          <div 
+            className="bg-light-gray rounded-lg h-[300px]"
+            style={{
+              backgroundImage: `linear-gradient(45deg, var(--color-concrete-gray) 25%, transparent 25%), linear-gradient(-45deg, var(--color-concrete-gray) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--color-concrete-gray) 75%), linear-gradient(-45deg, transparent 75%, var(--color-concrete-gray) 75%)`,
+              backgroundSize: '20px 20px',
+              backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+            }}
+          ></div>
+        </div>
+      </div>
+    </section>
+  );
+}
