@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Menu, X, Search } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
 import { useNavigation, Page } from '../context/NavigationContext';
+import { useSettings } from '../context/SettingsContext';
 
 export function Header({ onOpenSearch }: { onOpenSearch: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useI18n();
   const { currentPage, navigate } = useNavigation();
+  const { settings } = useSettings();
 
   const navLinks: { page: Page; label: string }[] = [
     { page: 'home', label: 'Home' },
@@ -14,18 +16,19 @@ export function Header({ onOpenSearch }: { onOpenSearch: () => void }) {
     { page: 'services', label: 'Services' },
     { page: 'projects', label: 'Portfolio' },
     { page: 'insights', label: 'Insights' },
+    { page: 'reviews', label: 'Reviews' },
     { page: 'contact', label: 'Contact' }
   ];
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-white shadow-custom z-[1000] py-4 transition-all">
+    <header className="fixed top-0 left-0 w-full bg-white shadow-custom z-[1000] py-4 transition-all print:hidden">
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center flex-nowrap gap-2 md:gap-4">
         
         <div 
           className="flex items-center gap-3 cursor-pointer" 
           onClick={() => navigate('home')}
         >
-          <img src="https://lh3.googleusercontent.com/d/17P2w-kaeNW06Xb5OTU1UK-sRLSV4RUsy" alt="Glasswater" className="h-[40px] md:h-[50px] w-auto block" />
+          <img src={settings.logoUrl} alt="Glasswater" className="h-[40px] md:h-[50px] w-auto block object-contain" />
           <div className="flex flex-col leading-none">
             <div className="font-serif text-[1.2rem] md:text-[1.6rem] font-bold text-navy tracking-tight">
               GLASSWATER<span className="text-gold">.</span>

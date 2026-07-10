@@ -1,6 +1,7 @@
 import React from "react";
 import { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
+import { defaultReviews } from '../data';
 
 interface Review {
   name: string;
@@ -27,6 +28,9 @@ export function ReviewsPage() {
       } catch (e) {
         console.error('Failed to parse reviews');
       }
+    } else {
+      setReviews(defaultReviews);
+      localStorage.setItem('glasswater_reviews', JSON.stringify(defaultReviews));
     }
   }, []);
 

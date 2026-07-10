@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useNavigation } from '../context/NavigationContext';
 import { CheckCircle2, Building2, Star, ShieldCheck, ArrowRight } from 'lucide-react';
-import { projects, posts } from '../data';
+import { projects, posts, defaultReviews } from '../data';
 import { RainCanvas } from '../components/RainCanvas';
 
 export function HomePage() {
@@ -18,6 +18,9 @@ export function HomePage() {
       try {
         setReviews(JSON.parse(saved));
       } catch (e) {}
+    } else {
+      setReviews(defaultReviews);
+      localStorage.setItem('glasswater_reviews', JSON.stringify(defaultReviews));
     }
     try {
       const p = localStorage.getItem("glasswater_projects");
@@ -156,13 +159,28 @@ export function HomePage() {
                   <div className="text-gold text-2xl tracking-widest mb-4">
                     {'★'.repeat(r.rating)}{'☆'.repeat(5-r.rating)}
                   </div>
-                  <p className="text-light-gray/90 mb-6 md:mb-8 text-lg italic leading-relaxed">"{r.text}"</p>
+                  <p className="text-light-gray/90 mb-6 md:mb-8 text-lg italic leading-relaxed font-light">"{r.text}"</p>
                   <div>
                     <h4 className="font-serif font-bold text-xl">{r.name}</h4>
                     {r.location && <p className="text-gold text-xs uppercase tracking-widest font-semibold mt-2">{r.location}</p>}
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-12 text-center flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <button 
+                onClick={() => navigate('reviews')}
+                className="bg-gold text-white px-8 py-3.5 rounded font-semibold uppercase tracking-widest hover:bg-white hover:text-navy transition-all shadow-custom cursor-pointer text-sm"
+              >
+                Write a Review
+              </button>
+              <button 
+                onClick={() => navigate('reviews')}
+                className="bg-white/10 border border-white/20 text-white px-8 py-3.5 rounded font-semibold uppercase tracking-widest hover:bg-gold hover:text-white transition-all shadow-custom cursor-pointer text-sm"
+              >
+                View All Reviews
+              </button>
             </div>
           </div>
         </section>

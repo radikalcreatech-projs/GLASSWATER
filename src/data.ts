@@ -220,3 +220,28 @@ export const translations: Record<string, Record<string, string>> = {
     'wizard.step6': 'Vos coordonnées'
   }
 };
+
+export const defaultReviews = [
+  {
+    name: 'Kofi Mensah',
+    location: 'Airport Residential Area, Accra',
+    rating: 5,
+    text: 'Glasswater completed the fit‑out for our new corporate office ahead of schedule. The craftsmanship in the glass partitioning and finishing is pristine. Highly recommended!',
+    date: 1717843200000
+  },
+  {
+    name: 'Naa Adjeley',
+    location: 'East Legon, Accra',
+    rating: 5,
+    text: 'We had persistent dampness and roof leaks in our warehouse for years. Glasswater applied their multi‑layer liquid waterproofing system, and we have been bone dry ever since.',
+    date: 1718016000000
+  },
+  {
+    name: 'Ekow Benson',
+    location: 'Tema Community 6',
+    rating: 4,
+    text: 'Superb project management and structural engineering. Their pool construction division is also state‑of‑the‑art. Communication was excellent throughout the project.',
+    date: 1718275200000
+  }
+];
+

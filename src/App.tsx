@@ -9,6 +9,7 @@ import { SearchModal } from './components/SearchModal';
 import { WizardModal } from './components/WizardModal';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import { I18nProvider } from './context/I18nContext';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { MessageCircle, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -50,6 +51,7 @@ function PageRenderer() {
 function MainApp() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const { settings } = useSettings();
 
   // Migrate old Cloudinary URLs or local paths in localStorage to direct Google Drive URLs
   useEffect(() => {
@@ -98,7 +100,7 @@ function MainApp() {
     <div className="min-h-screen bg-bg-body flex flex-col font-sans">
       <Header onOpenSearch={() => setIsSearchOpen(true)} />
       
-      <main className="flex-1 mt-[70px] md:mt-[80px]">
+      <main className="flex-1 mt-[70px] md:mt-[80px] print:mt-0">
         <PageRenderer />
       </main>
       
@@ -110,16 +112,16 @@ function MainApp() {
       {/* Floating Action Buttons */}
       <button 
         onClick={() => setIsWizardOpen(true)}
-        className="fixed bottom-[100px] right-6 bg-gold text-white px-6 py-4 rounded-full font-semibold shadow-custom hover:scale-105 hover:bg-navy transition-all z-50 flex items-center gap-3"
+        className="fixed bottom-[100px] right-6 bg-gold text-white px-6 py-4 rounded-full font-semibold shadow-custom hover:scale-105 hover:bg-navy transition-all z-50 flex items-center gap-3 print:hidden"
       >
         <FileText size={20} /> <span className="hidden md:inline uppercase tracking-widest text-sm">Request Quote</span>
       </button>
 
       <a
-        href="https://wa.me/2330248284384"
+        href={settings.whatsapp}
         target="_blank"
         rel="noreferrer"
-        className="fixed bottom-6 right-6 bg-[#25D366] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-custom hover:scale-110 hover:bg-[#128C7E] transition-all z-50"
+        className="fixed bottom-6 right-6 bg-[#25D366] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-custom hover:scale-110 hover:bg-[#128C7E] transition-all z-50 print:hidden"
         aria-label="Chat on WhatsApp"
       >
         <MessageCircle size={32} />
@@ -131,9 +133,11 @@ function MainApp() {
 export default function App() {
   return (
     <I18nProvider>
-      <NavigationProvider>
-        <MainApp />
-      </NavigationProvider>
+      <SettingsProvider>
+        <NavigationProvider>
+          <MainApp />
+        </NavigationProvider>
+      </SettingsProvider>
     </I18nProvider>
   );
 }
