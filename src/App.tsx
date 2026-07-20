@@ -8,7 +8,7 @@ import { Footer } from './components/Footer';
 import { SearchModal } from './components/SearchModal';
 import { WizardModal } from './components/WizardModal';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
-import { I18nProvider } from './context/I18nContext';
+import { I18nProvider, useI18n } from './context/I18nContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { MessageCircle, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -52,6 +52,7 @@ function MainApp() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const { settings } = useSettings();
+  const { t } = useI18n();
 
   // Migrate old Cloudinary URLs or local paths in localStorage to direct Google Drive URLs
   useEffect(() => {
@@ -114,7 +115,7 @@ function MainApp() {
         onClick={() => setIsWizardOpen(true)}
         className="fixed bottom-[90px] md:bottom-[100px] right-4 md:right-6 bg-gold text-white px-4 py-2.5 md:px-6 md:py-4 rounded-full font-semibold shadow-custom hover:scale-105 hover:bg-navy transition-all z-50 flex items-center gap-2 md:gap-3 print:hidden"
       >
-        <FileText size={16} className="md:w-5 md:h-5" /> <span className="uppercase tracking-widest text-[0.6rem] md:text-sm">Request Quote</span>
+        <FileText size={16} className="md:w-5 md:h-5" /> <span className="uppercase tracking-widest text-[0.6rem] md:text-sm">{t('quote.sticky')}</span>
       </button>
 
       <a

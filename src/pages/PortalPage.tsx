@@ -20,10 +20,10 @@ export function PortalPage() {
       if (foundDoc) {
         setRetrievedDoc(foundDoc);
       } else {
-        setErrorMsg(`No document found for Reference Code "${codeParam}".`);
+        setErrorMsg(`${t('portal.doc_error')} "${codeParam}".`);
       }
     }
-  }, [documents]);
+  }, [documents, t]);
 
   const handleDownloadPDF = async () => {
     if (!retrievedDoc) return;
@@ -59,7 +59,7 @@ export function PortalPage() {
     if (foundDoc) {
       setRetrievedDoc(foundDoc);
     } else {
-      setErrorMsg(`No document found for Reference Code "${cleanedCode}". Please verify your code and try again.`);
+      setErrorMsg(`${t('portal.doc_error')} "${cleanedCode}". Please verify your code and try again.`);
     }
   };
 
@@ -84,7 +84,7 @@ export function PortalPage() {
             onClick={handleBackToSearch} 
             className="flex items-center gap-2 text-text-secondary hover:text-navy font-semibold uppercase tracking-widest text-xs transition-colors cursor-pointer"
           >
-            <ArrowLeft size={16} /> Search Another Code
+            <ArrowLeft size={16} /> {t('portal.search_another')}
           </button>
           
           <div className="flex gap-3">
@@ -92,7 +92,7 @@ export function PortalPage() {
               onClick={handleDownloadPDF} 
               className="bg-navy/5 border border-navy/20 hover:bg-navy/10 text-navy px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer"
             >
-              <Download size={14} /> Download PDF
+              <Download size={14} /> {t('portal.download_pdf')}
             </button>
             {retrievedDoc.fileUrl && (
               <a 
@@ -101,14 +101,14 @@ export function PortalPage() {
                 rel="noreferrer" 
                 className="bg-navy/5 border border-navy/20 hover:bg-navy/10 text-navy px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2"
               >
-                <Download size={14} /> View Attached File
+                <Download size={14} /> {t('portal.view_file')}
               </a>
             )}
             <button 
               onClick={handlePrint} 
               className="bg-gold hover:bg-navy text-white px-5 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer"
             >
-              <Printer size={14} /> Print
+              <Printer size={14} /> {t('portal.print')}
             </button>
           </div>
         </div>

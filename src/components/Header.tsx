@@ -12,14 +12,14 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
   const { settings } = useSettings();
   const { isDark, toggle } = useDarkMode();
 
-  const navLinks: { page: Page; label: string }[] = [
-    { page: 'home', label: 'Home' },
-    { page: 'about', label: 'About Us' },
-    { page: 'services', label: 'Services' },
-    { page: 'projects', label: 'Portfolio' },
-    { page: 'insights', label: 'Insights' },
-    { page: 'reviews', label: 'Reviews' },
-    { page: 'contact', label: 'Contact' }
+  const navLinks: { page: Page; key: string }[] = [
+    { page: 'home', key: 'nav.home' },
+    { page: 'about', key: 'nav.about' },
+    { page: 'services', key: 'nav.services' },
+    { page: 'projects', key: 'nav.projects' },
+    { page: 'insights', key: 'nav.insights' },
+    { page: 'reviews', key: 'nav.reviews' },
+    { page: 'contact', key: 'nav.contact' }
   ];
 
   return (
@@ -46,7 +46,7 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
             className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-text-primary hover:text-gold transition-colors"
             onClick={() => setLang(lang === 'en' ? 'fr' : 'en')}
             aria-label="Toggle Language"
-            title={lang === 'en' ? 'Switch to French' : 'Switch to English'}
+            title={lang === 'en' ? 'Passer au français' : 'Switch to English'}
           >
             <span className="text-[10px] md:text-xs font-bold uppercase">{lang === 'en' ? 'FR' : 'EN'}</span>
           </button>
@@ -79,14 +79,14 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
               onClick={() => navigate(link.page)}
               className={`font-sans font-semibold text-[0.8rem] uppercase tracking-widest whitespace-nowrap transition-colors ${currentPage === link.page ? 'text-gold' : 'text-text-primary hover:text-gold'}`}
             >
-              {link.label}
+              {t(link.key)}
             </button>
           ))}
           <button 
             onClick={() => navigate('portal')}
             className="bg-gold text-white px-6 py-2.5 rounded font-semibold hover:bg-navy transition-colors ml-4 uppercase tracking-widest text-[0.75rem] md:text-sm"
           >
-            View Estimate
+            {t('nav.portal')}
           </button>
         </nav>
       </div>
@@ -103,7 +103,7 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
                 setIsOpen(false);
               }}
             >
-              {link.label}
+              {t(link.key)}
             </button>
           ))}
           <div className="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-gray-100">
@@ -114,7 +114,7 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
               }}
               className="bg-navy text-white py-2.5 rounded font-semibold hover:bg-gold transition-colors text-center uppercase tracking-widest text-[0.65rem] sm:text-xs"
             >
-              View Estimate
+              {t('nav.portal')}
             </button>
             <button
               onClick={() => {
