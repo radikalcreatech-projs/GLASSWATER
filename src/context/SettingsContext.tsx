@@ -10,6 +10,7 @@ export interface WebsiteSettings {
   facebook: string;
   instagram: string;
   linkedin: string;
+  paymentDetails: string;
 }
 
 export interface DocumentItem {
@@ -26,19 +27,22 @@ export interface ClientDocument {
   clientEmail?: string;
   clientPhone?: string;
   title: string;
-  type: 'Estimate' | 'Waybill' | 'Invoice';
+  type: 'Estimate' | 'Waybill' | 'Invoice' | 'Receipt';
   status: 'Draft' | 'Sent' | 'Approved' | 'Delivered' | 'Paid' | 'Cancelled';
   date: string;
   dueDate?: string;
   items: DocumentItem[];
   notes?: string;
   totalAmount: number;
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
+  includePaymentDetails?: boolean;
   fileUrl?: string;
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
   logoUrl: 'https://lh3.googleusercontent.com/d/17P2w-kaeNW06Xb5OTU1UK-sRLSV4RUsy',
-  contactImageUrl: 'https://lh3.googleusercontent.com/d/1eOKbap3UVyhpSfsQyZoZXUd1LGjgLn72',
+  contactImageUrl: 'https://lh3.googleusercontent.com/d/1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6c',
   phone: '0248284384',
   whatsapp: 'https://wa.me/2330248284384',
   email: 'glasswaterfits@gmail.com',
@@ -46,6 +50,7 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   facebook: 'https://facebook.com/glasswater',
   instagram: 'https://instagram.com/glasswater',
   linkedin: 'https://linkedin.com/company/glasswater',
+  paymentDetails: 'Bank: Example Bank\nAccount Name: Glasswater Fit-Outs\nAccount Number: 1234567890\nMomo: 0248284384',
 };
 
 const DEFAULT_DOCUMENTS: ClientDocument[] = [
@@ -89,7 +94,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const savedSettings = localStorage.getItem('glasswater_settings');
     if (savedSettings) {
       try {
-        setSettings(JSON.parse(savedSettings));
+        let parsed = JSON.parse(savedSettings);
+        if (parsed.contactImageUrl?.includes('1eOKbap3UVyhpSfsQyZoZXUd1LGjgLn72')) {
+          parsed.contactImageUrl = 'https://lh3.googleusercontent.com/d/1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6c';
+          localStorage.setItem('glasswater_settings', JSON.stringify(parsed));
+        }
+        setSettings(parsed);
       } catch (e) {
         console.error('Error loading settings', e);
       }

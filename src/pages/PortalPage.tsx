@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSettings } from '../context/SettingsContext';
 import { FileText, ArrowLeft, Printer, Download, Mail, MapPin, Phone, MessageCircle, ShieldCheck } from 'lucide-react';
@@ -9,6 +9,40 @@ export function PortalPage() {
   const [refCode, setRefCode] = useState('');
   const [retrievedDoc, setRetrievedDoc] = useState<any | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    // Check for ?code= parameter in URL
+    const params = new URLSearchParams(window.location.hash.split('?')[1]);
+    const codeParam = params.get('code');
+    if (codeParam) {
+      setRefCode(codeParam);
+      const foundDoc = documents.find(doc => doc.code.toUpperCase() === codeParam.toUpperCase());
+      if (foundDoc) {
+        setRetrievedDoc(foundDoc);
+      } else {
+        setErrorMsg(`No document found for Reference Code "${codeParam}".`);
+      }
+    }
+  }, [documents]);
+
+  const handleDownloadPDF = async () => {
+    if (!retrievedDoc) return;
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = document.getElementById('printable-document');
+      const opt = {
+        margin:       [10, 10, 10, 10],
+        filename:     `${retrievedDoc.code}_${retrievedDoc.clientName}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    } catch (e) {
+      console.error('Error generating PDF', e);
+      alert('Failed to generate PDF. You can also use the Print button.');
+    }
+  };
 
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -54,6 +88,12 @@ export function PortalPage() {
           </button>
           
           <div className="flex gap-3">
+            <button 
+              onClick={handleDownloadPDF} 
+              className="bg-navy/5 border border-navy/20 hover:bg-navy/10 text-navy px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer"
+            >
+              <Download size={14} /> Download PDF
+            </button>
             {retrievedDoc.fileUrl && (
               <a 
                 href={retrievedDoc.fileUrl} 
@@ -61,20 +101,20 @@ export function PortalPage() {
                 rel="noreferrer" 
                 className="bg-navy/5 border border-navy/20 hover:bg-navy/10 text-navy px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2"
               >
-                <Download size={14} /> Download PDF Copy
+                <Download size={14} /> View Attached File
               </a>
             )}
             <button 
               onClick={handlePrint} 
               className="bg-gold hover:bg-navy text-white px-5 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer"
             >
-              <Printer size={14} /> Print / Save as PDF
+              <Printer size={14} /> Print
             </button>
           </div>
         </div>
 
         {/* Corporate Letterhead & Document Card */}
-        <div className="bg-white rounded-xl shadow-custom border border-gold/20 p-8 md:p-12 print:border-none print:shadow-none print:p-0">
+        <div id="printable-document" className="bg-white rounded-xl shadow-custom border border-gold/20 p-8 md:p-12 print:border-none print:shadow-none print:p-0">
           
           {/* Header Row */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-light-gray pb-8 mb-8 gap-6">
@@ -164,8 +204,21 @@ export function PortalPage() {
                     ))}
                   </tbody>
                   <tfoot>
+                    {retrievedDoc.discountType && (
+                      <tr className="text-sm font-semibold text-text-secondary border-t border-light-gray bg-white">
+                        <td colSpan={3} className="p-3 text-right">
+                          Discount ({retrievedDoc.discountType === 'percentage' ? `${retrievedDoc.discountValue}%` : 'Fixed'})
+                        </td>
+                        <td className="p-3 text-right text-red-500">
+                          - GHS {retrievedDoc.discountType === 'fixed' 
+                            ? Number(retrievedDoc.discountValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : (retrievedDoc.items.reduce((sum: number, item: any) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0) * Number(retrievedDoc.discountValue) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                          }
+                        </td>
+                      </tr>
+                    )}
                     <tr className="bg-light-gray/30 font-bold text-base text-navy">
-                      <td colSpan={3} className="p-4 text-right border-t border-light-gray">Total Estimated Value:</td>
+                      <td colSpan={3} className="p-4 text-right border-t border-light-gray">Total Amount:</td>
                       <td className="p-4 text-right text-gold border-t border-light-gray font-mono">
                         GHS {Number(retrievedDoc.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
@@ -175,6 +228,16 @@ export function PortalPage() {
               </div>
             )}
           </div>
+
+          {/* Payment Details Block */}
+          {retrievedDoc.includePaymentDetails && settings.paymentDetails && (
+            <div className="bg-navy/5 p-6 rounded-lg border border-navy/10 mb-8">
+              <h4 className="text-[10px] font-bold text-navy uppercase tracking-widest mb-2 flex items-center gap-2">
+                 Payment Information
+              </h4>
+              <p className="text-sm text-navy/80 font-mono leading-relaxed whitespace-pre-line">{settings.paymentDetails}</p>
+            </div>
+          )}
 
           {/* Notes Block */}
           {retrievedDoc.notes && (

@@ -27,11 +27,11 @@ import { PortalPage } from './pages/PortalPage';
 import { PostPage } from './pages/PostPage';
 import { AdminPage } from './pages/AdminPage';
 
-function PageRenderer() {
+function PageRenderer({ onOpenWizard }: { onOpenWizard: () => void }) {
   const { currentPage } = useNavigation();
 
   switch (currentPage) {
-    case 'home': return <HomePage />;
+    case 'home': return <HomePage onOpenWizard={onOpenWizard} />;
     case 'about': return <AboutPage />;
     case 'services': return <ServicesPage />;
     case 'projects': return <ProjectsPage />;
@@ -44,7 +44,7 @@ function PageRenderer() {
     case 'reviews': return <ReviewsPage />;
     case 'careers': return <CareersPage />;
     case 'admin': return <AdminPage />;
-    default: return <HomePage />;
+    default: return <HomePage onOpenWizard={onOpenWizard} />;
   }
 }
 
@@ -72,7 +72,7 @@ function MainApp() {
               if (match.includes('IMG-20260705-WA0092_q6v7sc')) return 'https://lh3.googleusercontent.com/d/16rYbGyUo4aXCqVO3fsKTyL4NI7Ww8rnI';
               if (match.includes('IMG-20260705-WA0094_dqxgcr')) return 'https://lh3.googleusercontent.com/d/1yybAmLVE2csJ7mUpp1kqgYMA_Jsk4aeZ';
               if (match.includes('logoglasswater')) return 'https://lh3.googleusercontent.com/d/17P2w-kaeNW06Xb5OTU1UK-sRLSV4RUsy';
-              if (match.includes('download_1_rehu5v')) return 'https://lh3.googleusercontent.com/d/1eOKbap3UVyhpSfsQyZoZXUd1LGjgLn72';
+              if (match.includes('download_1_rehu5v')) return 'https://lh3.googleusercontent.com/d/1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6c';
               return match;
             });
 
@@ -82,7 +82,7 @@ function MainApp() {
               if (match.includes('kitchen-sink')) return 'https://lh3.googleusercontent.com/d/16rYbGyUo4aXCqVO3fsKTyL4NI7Ww8rnI';
               if (match.includes('water-filter')) return 'https://lh3.googleusercontent.com/d/1yybAmLVE2csJ7mUpp1kqgYMA_Jsk4aeZ';
               if (match.includes('logo')) return 'https://lh3.googleusercontent.com/d/17P2w-kaeNW06Xb5OTU1UK-sRLSV4RUsy';
-              if (match.includes('bathroom-shower')) return 'https://lh3.googleusercontent.com/d/1eOKbap3UVyhpSfsQyZoZXUd1LGjgLn72';
+              if (match.includes('bathroom-shower')) return 'https://lh3.googleusercontent.com/d/1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6c';
               if (match.includes('pipes')) return 'https://lh3.googleusercontent.com/d/12t2BvS2Yw52abLkC9cHlaEkLlhFf020p';
               return match;
             });
@@ -98,10 +98,10 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-bg-body flex flex-col font-sans">
-      <Header onOpenSearch={() => setIsSearchOpen(true)} />
+      <Header onOpenSearch={() => setIsSearchOpen(true)} onOpenWizard={() => setIsWizardOpen(true)} />
       
-      <main className="flex-1 mt-[70px] md:mt-[80px] print:mt-0">
-        <PageRenderer />
+      <main className="flex-1 mt-[54px] sm:mt-[70px] md:mt-[80px] print:mt-0">
+        <PageRenderer onOpenWizard={() => setIsWizardOpen(true)} />
       </main>
       
       <Footer />
@@ -112,9 +112,9 @@ function MainApp() {
       {/* Floating Action Buttons */}
       <button 
         onClick={() => setIsWizardOpen(true)}
-        className="fixed bottom-[100px] right-6 bg-gold text-white px-6 py-4 rounded-full font-semibold shadow-custom hover:scale-105 hover:bg-navy transition-all z-50 flex items-center gap-3 print:hidden"
+        className="fixed bottom-[90px] md:bottom-[100px] right-4 md:right-6 bg-gold text-white px-4 py-2.5 md:px-6 md:py-4 rounded-full font-semibold shadow-custom hover:scale-105 hover:bg-navy transition-all z-50 flex items-center gap-2 md:gap-3 print:hidden"
       >
-        <FileText size={20} /> <span className="hidden md:inline uppercase tracking-widest text-sm">Request Quote</span>
+        <FileText size={16} className="md:w-5 md:h-5" /> <span className="uppercase tracking-widest text-[0.6rem] md:text-sm">Request Quote</span>
       </button>
 
       <a

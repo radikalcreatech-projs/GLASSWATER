@@ -9,48 +9,49 @@ export function Footer() {
   const { settings } = useSettings();
 
   return (
-    <footer className="bg-navy text-light-gray pt-16 pb-8 print:hidden">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-16">
+    <footer className="bg-navy text-light-gray py-8 print:hidden">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-8">
         <div>
-          <h4 className="text-white font-serif font-bold text-2xl mb-6 tracking-wide">GLASSWATER<span className="text-gold">.</span></h4>
-          <p className="text-steel-blue text-sm uppercase tracking-widest font-semibold mb-4">FIT-OUTS & CO. LTD.</p>
-          <p className="text-light-gray/70 text-sm leading-relaxed max-w-xs">Precision built. Dependably delivered.</p>
+          <h4 className="text-white font-serif font-bold text-xl mb-4 tracking-wide">GLASSWATER<span className="text-gold">.</span></h4>
+          <p className="text-steel-blue text-[0.65rem] uppercase tracking-widest font-semibold mb-2">FIT-OUTS & CO. LTD.</p>
+          <p className="text-light-gray/70 text-xs leading-relaxed max-w-xs">Precision built. Dependably delivered.</p>
         </div>
         
         <div>
-          <h4 className="text-white font-sans font-semibold text-lg mb-6 tracking-widest uppercase text-sm">{t('footer.contact')}</h4>
-          <div className="space-y-4 text-light-gray/70 text-sm">
-            <a href={`tel:${settings.phone}`} className="flex items-center gap-3 hover:text-gold transition-colors cursor-pointer"><Phone size={18} className="text-gold" /> {settings.phone}</a>
-            <a href={`mailto:${settings.email}`} className="flex items-center gap-3 hover:text-gold transition-colors cursor-pointer"><Mail size={18} className="text-gold" /> {settings.email}</a>
-            <div className="flex items-start gap-3"><MapPin size={18} className="text-gold shrink-0 mt-0.5" /> <span className="leading-relaxed whitespace-pre-line">{settings.address}</span></div>
+          <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.contact')}</h4>
+          <div className="space-y-3 text-light-gray/70 text-xs">
+            <a href={`tel:${settings.phone}`} className="flex items-center gap-3 hover:text-gold transition-colors cursor-pointer"><Phone size={16} className="text-gold" /> {settings.phone}</a>
+            <a href={`mailto:${settings.email}`} className="flex items-center gap-3 hover:text-gold transition-colors cursor-pointer"><Mail size={16} className="text-gold" /> {settings.email}</a>
+            <div className="flex items-start gap-3"><MapPin size={16} className="text-gold shrink-0 mt-0.5" /> <span className="leading-relaxed whitespace-pre-line">{settings.address}</span></div>
           </div>
         </div>
 
         <div>
-          <h4 className="text-white font-sans font-semibold text-lg mb-6 tracking-widest uppercase text-sm">{t('footer.links')}</h4>
-          <ul className="space-y-3 text-sm">
-            <li><button onClick={() => navigate('home')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-xs">Home</button></li>
-            <li><button onClick={() => navigate('about')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-xs">About</button></li>
-            <li><button onClick={() => navigate('services')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-xs">Services</button></li>
-            <li><button onClick={() => navigate('projects')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-xs">Projects</button></li>
-            <li><button onClick={() => navigate('insights')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-xs">Insights</button></li>
-            <li><button onClick={() => navigate('contact')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-xs">Contact</button></li>
+          <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.links')}</h4>
+          <ul className="space-y-2 text-xs">
+            <li><button onClick={() => navigate('home')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Home</button></li>
+            <li><button onClick={() => navigate('about')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">About</button></li>
+            <li><button onClick={() => navigate('services')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Services</button></li>
+            <li><button onClick={() => navigate('projects')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Projects</button></li>
+            <li><button onClick={() => navigate('insights')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Insights</button></li>
+            <li><button onClick={() => navigate('contact')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Contact</button></li>
           </ul>
         </div>
         
         <div>
-          <h4 className="text-white font-sans font-semibold text-lg mb-6 tracking-widest uppercase text-sm">{t('footer.connect')}</h4>
-          <div className="flex flex-col gap-3 text-sm">
-            <a href={settings.whatsapp} target="_blank" rel="noreferrer" className="text-[#25D366] font-semibold hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-xs">
-              <MessageCircle size={16} /> WhatsApp
+          <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.connect')}</h4>
+          <div className="flex flex-col gap-2 text-xs">
+            <a href={settings.whatsapp} target="_blank" rel="noreferrer" className="text-[#25D366] font-semibold hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]">
+              <MessageCircle size={14} /> WhatsApp
             </a>
-            <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-xs">Facebook</a>
-            <a href={settings.instagram} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-xs">Instagram</a>
-            <a href={settings.linkedin} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-xs">LinkedIn</a>
+            <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Facebook</a>
+            <a href={settings.instagram} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Instagram</a>
+            <a href={settings.linkedin} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">LinkedIn</a>
           </div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-6 border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-light-gray/50 uppercase tracking-widest">
+
+      <div className="max-w-7xl mx-auto px-6 border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-2 text-[0.65rem] text-light-gray/50 uppercase tracking-widest">
         <div>&copy; 2026 Glasswater Fit‑Outs &amp; Co. Ltd.</div>
         <div>All rights reserved.</div>
       </div>

@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from 'react';
 import { useNavigation } from '../context/NavigationContext';
-import { Settings, LogOut, CheckCircle2, XCircle, Trash2, Edit, Star, Plus, FileText, Copy, Check, Info, Share2, Eye, PlusCircle, Trash, Globe } from 'lucide-react';
+import { Settings, LogOut, CheckCircle2, XCircle, Trash2, Edit, Star, Plus, FileText, Copy, Check, Info, Share2, Eye, PlusCircle, Trash, Globe, Download } from 'lucide-react';
 import { projects as defaultProjects, posts as defaultPosts } from '../data';
 import { useSettings, WebsiteSettings, ClientDocument, DocumentItem } from '../context/SettingsContext';
 
@@ -42,8 +42,14 @@ export function AdminPage() {
     }));
   };
 
-  const calcDocTotal = (items: DocumentItem[]) => {
-    return items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0);
+  const calcDocTotal = (items: DocumentItem[], discountType?: string, discountValue?: number) => {
+    let sum = items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0);
+    if (discountType === 'fixed') {
+      sum = Math.max(0, sum - (Number(discountValue) || 0));
+    } else if (discountType === 'percentage') {
+      sum = Math.max(0, sum - (sum * (Number(discountValue) || 0) / 100));
+    }
+    return sum;
   };
 
   const handleDocItemChange = (itemId: string, field: keyof DocumentItem, value: any) => {
@@ -64,7 +70,16 @@ export function AdminPage() {
     setEditingDoc({
       ...editingDoc,
       items: updatedItems,
-      totalAmount: calcDocTotal(updatedItems)
+      totalAmount: calcDocTotal(updatedItems, editingDoc.discountType, editingDoc.discountValue)
+    });
+  };
+
+  const handleDocDiscountChange = (field: 'discountType' | 'discountValue', value: any) => {
+    if (!editingDoc) return;
+    const newDoc = { ...editingDoc, [field]: value };
+    setEditingDoc({
+      ...newDoc,
+      totalAmount: calcDocTotal(newDoc.items, newDoc.discountType, newDoc.discountValue)
     });
   };
 
@@ -592,6 +607,15 @@ export function AdminPage() {
                   </div>
                 </div>
 
+                {/* Payment Information Section */}
+                <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray mb-8">
+                  <h3 className="font-serif text-lg font-bold text-navy mb-4 flex items-center gap-2 border-b border-light-gray pb-2">
+                    <FileText size={18} className="text-gold" /> Default Payment Details
+                  </h3>
+                  <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Bank / Momo Details (Displayed on Estimates/Invoices)</label>
+                  <textarea rows={4} value={localSettings.paymentDetails || ''} onChange={e => setFormSettingsVal('paymentDetails', e.target.value)} className={`${inputClass} resize-y`} placeholder="Bank: Example Bank&#10;Account Name: Glasswater Fit-Outs&#10;Account Number: 1234567890&#10;Momo: 0248284384"></textarea>
+                </div>
+
                 {/* Social Channels Section */}
                 <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray mb-8">
                   <h3 className="font-serif text-lg font-bold text-navy mb-4 border-b border-light-gray pb-2">Social Channels Links</h3>
@@ -676,6 +700,7 @@ export function AdminPage() {
                           <option value="Estimate">Estimate</option>
                           <option value="Waybill">Waybill</option>
                           <option value="Invoice">Invoice</option>
+                          <option value="Receipt">Receipt</option>
                         </select>
                       </div>
 
@@ -816,6 +841,48 @@ export function AdminPage() {
                           </table>
                         </div>
                       )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                      <div>
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Discount Type</label>
+                        <select 
+                          value={editingDoc.discountType || ''}
+                          onChange={e => handleDocDiscountChange('discountType', e.target.value)}
+                          className={inputClass}
+                        >
+                          <option value="">None</option>
+                          <option value="fixed">Fixed Amount (GHS)</option>
+                          <option value="percentage">Percentage (%)</option>
+                        </select>
+                      </div>
+                      
+                      {editingDoc.discountType && (
+                        <div>
+                          <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Discount Value</label>
+                          <input 
+                            type="number" 
+                            min="0"
+                            step="0.01"
+                            value={editingDoc.discountValue || ''}
+                            onChange={e => handleDocDiscountChange('discountValue', e.target.value)}
+                            className={inputClass}
+                            placeholder={editingDoc.discountType === 'percentage' ? "e.g. 10" : "e.g. 500"}
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center">
+                        <label className="flex items-center gap-3 cursor-pointer md:mt-4">
+                          <input 
+                            type="checkbox" 
+                            checked={!!editingDoc.includePaymentDetails}
+                            onChange={e => setEditingDoc({ ...editingDoc, includePaymentDetails: e.target.checked })}
+                            className="w-5 h-5 accent-gold cursor-pointer"
+                          />
+                          <span className="text-sm font-semibold text-navy uppercase tracking-widest">Attach Payment Details</span>
+                        </label>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -972,6 +1039,16 @@ export function AdminPage() {
                                     <span className="text-[10px] font-semibold uppercase tracking-wider hidden sm:inline">Code</span>
                                   </button>
 
+                                  <button 
+                                    type="button"
+                                    onClick={() => {
+                                      window.location.hash = `#portal?code=${doc.code}`;
+                                    }}
+                                    className="p-1.5 hover:bg-navy/10 rounded text-navy transition-all cursor-pointer"
+                                    title="View & Download PDF"
+                                  >
+                                    <Download size={16} />
+                                  </button>
                                   <button 
                                     type="button"
                                     onClick={() => {
