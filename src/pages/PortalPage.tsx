@@ -40,7 +40,7 @@ export function PortalPage() {
       html2pdf().set(opt).from(element).save();
     } catch (e) {
       console.error('Error generating PDF', e);
-      alert('Failed to generate PDF. You can also use the Print button.');
+      alert(t('portal.pdf_error'));
     }
   };
 
@@ -59,7 +59,7 @@ export function PortalPage() {
     if (foundDoc) {
       setRetrievedDoc(foundDoc);
     } else {
-      setErrorMsg(`${t('portal.doc_error')} "${cleanedCode}". Please verify your code and try again.`);
+      setErrorMsg(`${t('portal.doc_error')} "${cleanedCode}". ${t('portal.doc_error_verify')}`);
     }
   };
 
@@ -132,18 +132,18 @@ export function PortalPage() {
                 retrievedDoc.type === 'Waybill' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
                 'bg-green-100 text-green-800 border border-green-200'
               }`}>
-                {retrievedDoc.type} Statement
+                {retrievedDoc.type} {t('portal.statement')}
               </span>
               <div className="text-2xl font-mono font-bold text-navy">{retrievedDoc.code}</div>
-              <div className="text-xs text-text-secondary mt-1">Date Issued: {retrievedDoc.date}</div>
-              {retrievedDoc.dueDate && <div className="text-xs text-text-secondary">Due Date: {retrievedDoc.dueDate}</div>}
+              <div className="text-xs text-text-secondary mt-1">{t('portal.date_issued')}: {retrievedDoc.date}</div>
+              {retrievedDoc.dueDate && <div className="text-xs text-text-secondary">{t('portal.due_date')}: {retrievedDoc.dueDate}</div>}
             </div>
           </div>
 
           {/* Parties Block */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div>
-              <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest mb-3 border-b border-light-gray pb-1">Issued By</h4>
+              <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest mb-3 border-b border-light-gray pb-1">{t('portal.issued_by')}</h4>
               <div className="font-semibold text-navy text-base">Glasswater Fit‑Outs &amp; Co. Ltd.</div>
               <div className="text-sm text-text-secondary space-y-1 mt-2">
                 <p className="flex items-start gap-2"><MapPin size={14} className="text-gold shrink-0 mt-0.5" /> <span className="whitespace-pre-line">{settings.address}</span></p>
@@ -151,9 +151,8 @@ export function PortalPage() {
                 <p className="flex items-center gap-2"><Mail size={14} className="text-gold shrink-0" /> <span>{settings.email}</span></p>
               </div>
             </div>
-
             <div>
-              <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest mb-3 border-b border-light-gray pb-1">Client Information</h4>
+              <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest mb-3 border-b border-light-gray pb-1">{t('portal.client_info')}</h4>
               <div className="font-semibold text-navy text-base">{retrievedDoc.clientName}</div>
               <div className="text-sm text-text-secondary space-y-1 mt-2">
                 {retrievedDoc.clientEmail && <p className="flex items-center gap-2"><Mail size={14} className="text-gold shrink-0" /> <span>{retrievedDoc.clientEmail}</span></p>}
@@ -161,7 +160,7 @@ export function PortalPage() {
                 <div className="flex items-start gap-2 mt-3 bg-light-gray/40 p-2.5 rounded border border-light-gray/60">
                   <ShieldCheck size={16} className="text-green-600 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-xs font-semibold uppercase text-navy block">System Status</span>
+                    <span className="text-xs font-semibold uppercase text-navy block">{t('portal.system_status')}</span>
                     <span className="text-xs font-medium text-green-700 uppercase tracking-wider">{retrievedDoc.status}</span>
                   </div>
                 </div>
@@ -171,26 +170,26 @@ export function PortalPage() {
 
           {/* Project Title Banner */}
           <div className="bg-navy text-white p-4 rounded-lg mb-8">
-            <span className="text-[9px] font-semibold text-gold uppercase tracking-widest block mb-1">Subject Matter / Scope of Works</span>
+            <span className="text-[9px] font-semibold text-gold uppercase tracking-widest block mb-1">{t('portal.subject_matter')}</span>
             <h3 className="font-serif text-lg font-bold">{retrievedDoc.title}</h3>
           </div>
 
           {/* Line Items Table */}
           <div className="mb-8">
-            <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest mb-4 border-b border-light-gray pb-1">Statement of Accounts</h4>
+            <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest mb-4 border-b border-light-gray pb-1">{t('portal.statement_accounts')}</h4>
             {retrievedDoc.items.length === 0 ? (
               <div className="text-center py-6 bg-light-gray/30 rounded text-text-secondary text-sm">
-                No itemized breakdown is recorded. Please see the attached PDF copy or contact our accounts office.
+                {t('portal.no_items')}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-light-gray text-navy text-[10px] uppercase tracking-widest font-bold">
-                      <th className="p-3">Item Description</th>
-                      <th className="p-3 w-20 text-center">Qty</th>
-                      <th className="p-3 w-32">Unit Price</th>
-                      <th className="p-3 w-36 text-right">Line Total</th>
+                      <th className="p-3">{t('portal.item_desc')}</th>
+                      <th className="p-3 w-20 text-center">{t('portal.qty')}</th>
+                      <th className="p-3 w-32">{t('portal.unit_price')}</th>
+                      <th className="p-3 w-36 text-right">{t('portal.line_total')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-light-gray text-sm">
@@ -207,7 +206,7 @@ export function PortalPage() {
                     {retrievedDoc.discountType && (
                       <tr className="text-sm font-semibold text-text-secondary border-t border-light-gray bg-white">
                         <td colSpan={3} className="p-3 text-right">
-                          Discount ({retrievedDoc.discountType === 'percentage' ? `${retrievedDoc.discountValue}%` : 'Fixed'})
+                          {t('portal.discount')} ({retrievedDoc.discountType === 'percentage' ? `${retrievedDoc.discountValue}%` : 'Fixed'})
                         </td>
                         <td className="p-3 text-right text-red-500">
                           - GHS {retrievedDoc.discountType === 'fixed' 
@@ -218,7 +217,7 @@ export function PortalPage() {
                       </tr>
                     )}
                     <tr className="bg-light-gray/30 font-bold text-base text-navy">
-                      <td colSpan={3} className="p-4 text-right border-t border-light-gray">Total Amount:</td>
+                      <td colSpan={3} className="p-4 text-right border-t border-light-gray">{t('portal.total_amount')}</td>
                       <td className="p-4 text-right text-gold border-t border-light-gray font-mono">
                         GHS {Number(retrievedDoc.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
@@ -233,7 +232,7 @@ export function PortalPage() {
           {retrievedDoc.includePaymentDetails && settings.paymentDetails && (
             <div className="bg-navy/5 p-6 rounded-lg border border-navy/10 mb-8">
               <h4 className="text-[10px] font-bold text-navy uppercase tracking-widest mb-2 flex items-center gap-2">
-                 Payment Information
+                 {t('portal.payment_info')}
               </h4>
               <p className="text-sm text-navy/80 font-mono leading-relaxed whitespace-pre-line">{settings.paymentDetails}</p>
             </div>
@@ -242,22 +241,22 @@ export function PortalPage() {
           {/* Notes Block */}
           {retrievedDoc.notes && (
             <div className="bg-light-gray/20 p-6 rounded-lg border border-light-gray mb-8">
-              <h4 className="text-[10px] font-bold text-navy uppercase tracking-widest mb-2">Terms &amp; Important Instructions</h4>
+              <h4 className="text-[10px] font-bold text-navy uppercase tracking-widest mb-2">{t('portal.terms')}</h4>
               <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line">{retrievedDoc.notes}</p>
             </div>
           )}
 
           {/* Footer Notice */}
           <div className="border-t border-light-gray pt-6 text-center text-[10px] text-text-secondary uppercase tracking-widest">
-            Thank you for choosing Glasswater. We appreciate your valued business.
+            {t('portal.thank_you')}
           </div>
 
         </div>
 
         {/* Client Support Help Section - Hidden when printing */}
         <div className="mt-8 text-center bg-light-gray/40 border border-light-gray rounded-xl p-6 print:hidden">
-          <h3 className="font-serif text-lg font-bold text-navy mb-2">Have questions about this Statement?</h3>
-          <p className="text-sm text-text-secondary mb-4">Get in touch directly with our support team to verify estimate details or approve work.</p>
+          <h3 className="font-serif text-lg font-bold text-navy mb-2">{t('portal.questions')}</h3>
+          <p className="text-sm text-text-secondary mb-4">{t('portal.get_in_touch')}</p>
           <div className="flex flex-wrap justify-center gap-4">
             <a 
               href={settings.whatsapp} 
@@ -265,13 +264,13 @@ export function PortalPage() {
               rel="noreferrer" 
               className="bg-[#25D366] text-white px-6 py-2.5 rounded text-xs font-semibold uppercase tracking-widest hover:bg-[#128C7E] transition-all flex items-center gap-2 shadow-sm"
             >
-              <MessageCircle size={16} /> WhatsApp Chat
+              <MessageCircle size={16} /> {t('whatsapp.chat')}
             </a>
             <a 
               href={`mailto:${settings.email}?subject=Inquiry on document ${retrievedDoc.code}`} 
               className="bg-navy text-white px-6 py-2.5 rounded text-xs font-semibold uppercase tracking-widest hover:bg-gold transition-all flex items-center gap-2 shadow-sm"
             >
-              <Mail size={16} /> Email Office
+              <Mail size={16} /> {t('portal.email_office')}
             </a>
           </div>
         </div>
@@ -314,7 +313,7 @@ export function PortalPage() {
           )}
           
           <p className="mt-8 text-concrete-gray text-xs tracking-wider uppercase">
-            {t('portal.demo')} (Try code: <span className="font-bold underline cursor-pointer text-gold hover:text-white transition-colors" onClick={() => { setRefCode('GW-DEMO'); setTimeout(() => handleSearch(), 100); }}>GW-DEMO</span>)
+            {t('portal.demo')} ( {t('portal.try_code')} <span className="font-bold underline cursor-pointer text-gold hover:text-white transition-colors" onClick={() => { setRefCode('GW-DEMO'); setTimeout(() => handleSearch(), 100); }}>GW-DEMO</span>)
           </p>
         </div>
       </section>

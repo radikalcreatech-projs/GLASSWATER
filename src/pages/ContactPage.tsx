@@ -46,7 +46,7 @@ ${message}
         <div className="max-w-7xl mx-auto">
         <div className="text-center mb-6 md:mb-10 max-w-3xl mx-auto">
           <img src={settings.contactImageUrl} alt="Contact Icon" className="w-full max-w-xs md:max-w-sm lg:max-w-md mx-auto mb-6 md:mb-10 object-contain" />
-          <h2 className="uppercase tracking-[0.3em] text-gold text-sm font-semibold mb-4">Get In Touch</h2>
+          <h2 className="uppercase tracking-[0.3em] text-gold text-sm font-semibold mb-4">{t('contact.get_in_touch')}</h2>
           <h1 className="font-serif text-5xl sm:text-6xl font-bold text-navy mb-6 md:mb-8">{t('contact.title')}</h1>
           <p className="text-xl text-text-secondary leading-relaxed">{t('contact.sub')}</p>
         </div>
@@ -71,7 +71,7 @@ ${message}
             <button type="submit" className="bg-gold text-white px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors w-full mt-2">
               {t('contact.send')}
             </button>
-            {submitted && <p className="text-green-600 font-medium mt-6 text-center">Thank you for your enquiry. Our team will respond within 24 hours.</p>}
+            {submitted && <p className="text-green-600 font-medium mt-6 text-center">{t('contact.thank_you')}</p>}
           </form>
 
           <div className="flex flex-col justify-center">
@@ -89,7 +89,7 @@ ${message}
               </div>
               <div className="flex items-center gap-6">
                 <div className="w-14 h-14 bg-[#25D366]/10 rounded-full flex items-center justify-center shrink-0 text-[#25D366]"><MessageCircle size={24} /></div>
-                <a href={settings.whatsapp} target="_blank" rel="noreferrer" className="text-[#25D366] text-xl font-semibold hover:underline">Chat on WhatsApp</a>
+                <a href={settings.whatsapp} target="_blank" rel="noreferrer" className="text-[#25D366] text-xl font-semibold hover:underline">{t('whatsapp.chat')}</a>
               </div>
               <div className="flex items-start gap-6">
                 <div className="w-14 h-14 bg-light-gray rounded-full flex items-center justify-center shrink-0 text-gold mt-1"><MapPin size={24} /></div>

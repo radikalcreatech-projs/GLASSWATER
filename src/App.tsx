@@ -123,7 +123,7 @@ function MainApp() {
         target="_blank"
         rel="noreferrer"
         className="fixed bottom-6 right-6 bg-[#25D366] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-custom hover:scale-110 hover:bg-[#128C7E] transition-all z-50 print:hidden"
-        aria-label="Chat on WhatsApp"
+        aria-label={t('whatsapp.chat')}
       >
         <MessageCircle size={32} />
       </a>

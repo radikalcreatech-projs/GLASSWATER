@@ -14,7 +14,7 @@ export function Footer() {
         <div>
           <h4 className="text-white font-serif font-bold text-xl mb-4 tracking-wide">GLASSWATER<span className="text-gold">.</span></h4>
           <p className="text-steel-blue text-[0.65rem] uppercase tracking-widest font-semibold mb-2">FIT-OUTS & CO. LTD.</p>
-          <p className="text-light-gray/70 text-xs leading-relaxed max-w-xs">Precision built. Dependably delivered.</p>
+          <p className="text-light-gray/70 text-xs leading-relaxed max-w-xs">{t('footer.slogan')}</p>
         </div>
         
         <div>
@@ -29,12 +29,12 @@ export function Footer() {
         <div>
           <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.links')}</h4>
           <ul className="space-y-2 text-xs">
-            <li><button onClick={() => navigate('home')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Home</button></li>
-            <li><button onClick={() => navigate('about')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">About</button></li>
-            <li><button onClick={() => navigate('services')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Services</button></li>
-            <li><button onClick={() => navigate('projects')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Projects</button></li>
-            <li><button onClick={() => navigate('insights')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Insights</button></li>
-            <li><button onClick={() => navigate('contact')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Contact</button></li>
+            <li><button onClick={() => navigate('home')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.home')}</button></li>
+            <li><button onClick={() => navigate('about')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.about')}</button></li>
+            <li><button onClick={() => navigate('services')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.services')}</button></li>
+            <li><button onClick={() => navigate('projects')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.projects')}</button></li>
+            <li><button onClick={() => navigate('insights')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.insights')}</button></li>
+            <li><button onClick={() => navigate('contact')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.contact')}</button></li>
           </ul>
         </div>
         
@@ -53,7 +53,7 @@ export function Footer() {
 
       <div className="max-w-7xl mx-auto px-6 border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-2 text-[0.65rem] text-light-gray/50 uppercase tracking-widest">
         <div>&copy; 2026 Glasswater Fit‑Outs &amp; Co. Ltd.</div>
-        <div>All rights reserved.</div>
+        <div>{t('footer.rights')}</div>
       </div>
     </footer>
   );
