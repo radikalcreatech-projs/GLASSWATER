@@ -57,15 +57,15 @@ ${message}
             <input type="email" name="email" placeholder="Email Address" required className={inputClass} />
             <input type="tel" name="phone" placeholder="Phone Number" className={inputClass} />
             <select name="service" className={inputClass}>
-              <option value="">Service Interest</option>
-              <option>Engineering</option>
-              <option>Construction</option>
-              <option>Interior Fit‑Out</option>
-              <option>Finishing Works</option>
-              <option>Waterproofing</option>
-              <option>Swimming Pool Engineering</option>
-              <option>Facilities Management</option>
-              <option>Other</option>
+              <option value="">{t('contact.service')}</option>
+              <option>{t('contact.opt_eng')}</option>
+              <option>{t('contact.opt_const')}</option>
+              <option>{t('contact.opt_int')}</option>
+              <option>{t('contact.opt_fin')}</option>
+              <option>{t('contact.opt_water')}</option>
+              <option>{t('contact.opt_pool')}</option>
+              <option>{t('contact.opt_fm')}</option>
+              <option>{t('contact.opt_other')}</option>
             </select>
             <textarea name="message" placeholder="Tell us about your project..." rows={6} className={`${inputClass} resize-y`}></textarea>
             <button type="submit" className="bg-gold text-white px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors w-full mt-2">

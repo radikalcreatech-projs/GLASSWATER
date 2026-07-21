@@ -121,8 +121,8 @@ export function PortalPage() {
             <div className="flex items-center gap-4">
               <img src={settings.logoUrl} alt="Glasswater Logo" className="h-16 w-auto object-contain" />
               <div className="leading-none">
-                <div className="font-serif text-2xl font-bold text-navy tracking-tight">GLASSWATER<span className="text-gold">.</span></div>
-                <div className="font-sans text-[9px] font-normal text-steel-blue tracking-widest mt-1 uppercase">Fit-Outs &amp; Co. Ltd.</div>
+                <div className="font-serif text-2xl font-bold text-navy tracking-tight">{settings.companyName ? settings.companyName.split(' ')[0] : 'GLASSWATER'}</div>
+                <div className="font-sans text-[9px] font-normal text-steel-blue tracking-widest mt-1 uppercase">{settings.companyName ? settings.companyName.substring(settings.companyName.indexOf(' ') + 1) : 'Fit-Outs & Co. Ltd.'}</div>
               </div>
             </div>
 
@@ -144,7 +144,7 @@ export function PortalPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div>
               <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest mb-3 border-b border-light-gray pb-1">{t('portal.issued_by')}</h4>
-              <div className="font-semibold text-navy text-base">Glasswater Fit‑Outs &amp; Co. Ltd.</div>
+              <div className="font-semibold text-navy text-base">{settings.companyName || 'Glasswater Fit-Outs & Co. Ltd.'}</div>
               <div className="text-sm text-text-secondary space-y-1 mt-2">
                 <p className="flex items-start gap-2"><MapPin size={14} className="text-gold shrink-0 mt-0.5" /> <span className="whitespace-pre-line">{settings.address}</span></p>
                 <p className="flex items-center gap-2"><Phone size={14} className="text-gold shrink-0" /> <span>{settings.phone}</span></p>

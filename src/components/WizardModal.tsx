@@ -81,12 +81,12 @@ Urgency: ${formData.urgency}
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step1')}</h3>
             <select className={inputClass} value={formData.type} onChange={e => updateForm('type', e.target.value)}>
-              <option value="">Select type...</option>
-              <option value="new-build">New Build</option>
-              <option value="renovation">Renovation</option>
-              <option value="fit-out">Fit-Out</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="waterproofing">Waterproofing</option>
+              <option value="">{t('wizard.type_select')}</option>
+              <option value="new-build">{t('wizard.new_build')}</option>
+              <option value="renovation">{t('wizard.renovation')}</option>
+              <option value="fit-out">{t('wizard.fit_out')}</option>
+              <option value="maintenance">{t('wizard.maintenance')}</option>
+              <option value="waterproofing">{t('wizard.waterproofing')}</option>
             </select>
             <div className="flex justify-between mt-6">
               <span></span>
@@ -101,10 +101,10 @@ Urgency: ${formData.urgency}
         {step === 2 && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step2')}</h3>
-            <input type="text" className={inputClass} placeholder="Address" value={formData.address} onChange={e => updateForm('address', e.target.value)} />
-            <input type="number" className={inputClass} placeholder="Floor area (sqm)" value={formData.area} onChange={e => updateForm('area', e.target.value)} />
-            <input type="number" className={inputClass} placeholder="Number of floors" value={formData.floors} onChange={e => updateForm('floors', e.target.value)} />
-            <input type="number" className={inputClass} placeholder="Property age (years)" value={formData.age} onChange={e => updateForm('age', e.target.value)} />
+            <input type="text" className={inputClass} placeholder={t('wizard.address')} value={formData.address} onChange={e => updateForm('address', e.target.value)} />
+            <input type="number" className={inputClass} placeholder={t('wizard.area')} value={formData.area} onChange={e => updateForm('area', e.target.value)} />
+            <input type="number" className={inputClass} placeholder={t('wizard.floors')} value={formData.floors} onChange={e => updateForm('floors', e.target.value)} />
+            <input type="number" className={inputClass} placeholder={t('wizard.age')} value={formData.age} onChange={e => updateForm('age', e.target.value)} />
             <div className="flex justify-between mt-6">
               <button className="bg-light-gray text-navy px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-gray-300 transition-colors" onClick={handlePrev}>
                 <ArrowLeft size={16} /> Back
@@ -120,12 +120,12 @@ Urgency: ${formData.urgency}
         {step === 3 && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step3')}</h3>
-            <textarea className={`${inputClass} resize-y h-24`} placeholder="Describe your needs..." value={formData.scope} onChange={e => updateForm('scope', e.target.value)}></textarea>
+            <textarea className={`${inputClass} resize-y h-24`} placeholder={t('wizard.scope_desc')} value={formData.scope} onChange={e => updateForm('scope', e.target.value)}></textarea>
             <div className="flex gap-4 flex-wrap mb-4">
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> Electrical</label>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> Plumbing</label>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> Carpentry</label>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> Painting</label>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> {t('wizard.electrical')}</label>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> {t('wizard.plumbing')}</label>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> {t('wizard.carpentry')}</label>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> {t('wizard.painting')}</label>
             </div>
             <div className="flex justify-between mt-6">
               <button className="bg-light-gray text-navy px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-gray-300 transition-colors" onClick={handlePrev}>
@@ -143,19 +143,19 @@ Urgency: ${formData.urgency}
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step4')}</h3>
             <select className={inputClass} value={formData.budget} onChange={e => updateForm('budget', e.target.value)}>
-              <option value="">Select budget range...</option>
-              <option value="under-10k">Under GHS 10,000</option>
-              <option value="10-50k">GHS 10,000 – 50,000</option>
-              <option value="50-100k">GHS 50,000 – 100,000</option>
-              <option value="100-500k">GHS 100,000 – 500,000</option>
-              <option value="over-500k">Over GHS 500,000</option>
+              <option value="">{t('wizard.budget_select')}</option>
+              <option value="under-10k">{t('wizard.under_10k')}</option>
+              <option value="10-50k">{t('wizard.budget_1')}</option>
+              <option value="50-100k">{t('wizard.budget_2')}</option>
+              <option value="100-500k">{t('wizard.budget_3')}</option>
+              <option value="over-500k">{t('wizard.over_500k')}</option>
             </select>
-            <input type="date" className={inputClass} placeholder="Desired start date" value={formData.startDate} onChange={e => updateForm('startDate', e.target.value)} />
+            <input type="date" className={inputClass} placeholder={t('wizard.start')} value={formData.startDate} onChange={e => updateForm('startDate', e.target.value)} />
             <select className={inputClass} value={formData.urgency} onChange={e => updateForm('urgency', e.target.value)}>
-              <option value="">Urgency...</option>
-              <option value="immediate">Immediate (within 1 week)</option>
-              <option value="soon">Soon (1-4 weeks)</option>
-              <option value="planned">Planned (1-3 months)</option>
+              <option value="">{t('wizard.urgency_select')}</option>
+              <option value="immediate">{t('wizard.immediate')}</option>
+              <option value="soon">{t('wizard.soon')}</option>
+              <option value="planned">{t('wizard.planned')}</option>
             </select>
             <div className="flex justify-between mt-6">
               <button className="bg-light-gray text-navy px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-gray-300 transition-colors" onClick={handlePrev}>
@@ -173,7 +173,7 @@ Urgency: ${formData.urgency}
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step5')}</h3>
             <input type="file" className={`${inputClass} !py-2`} multiple accept="image/*,.pdf,.dwg" />
-            <p className="text-sm text-text-secondary mb-4">Max 5 files (images, PDFs, DWG)</p>
+            <p className="text-sm text-text-secondary mb-4">{t('wizard.max_files')}</p>
             <div className="flex justify-between mt-6">
               <button className="bg-light-gray text-navy px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-gray-300 transition-colors" onClick={handlePrev}>
                 <ArrowLeft size={16} /> Back
@@ -189,13 +189,13 @@ Urgency: ${formData.urgency}
         {step === 6 && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step6')}</h3>
-            <input type="text" className={inputClass} placeholder="Full Name" required value={formData.name} onChange={e => updateForm('name', e.target.value)} />
-            <input type="email" className={inputClass} placeholder="Email" required value={formData.email} onChange={e => updateForm('email', e.target.value)} />
-            <input type="tel" className={inputClass} placeholder="Phone Number" value={formData.phone} onChange={e => updateForm('phone', e.target.value)} />
+            <input type="text" className={inputClass} placeholder={t('wizard.fullname')} required value={formData.name} onChange={e => updateForm('name', e.target.value)} />
+            <input type="email" className={inputClass} placeholder={t('wizard.email')} required value={formData.email} onChange={e => updateForm('email', e.target.value)} />
+            <input type="tel" className={inputClass} placeholder={t('wizard.phone')} value={formData.phone} onChange={e => updateForm('phone', e.target.value)} />
             <select className={inputClass} value={formData.contactMethod} onChange={e => updateForm('contactMethod', e.target.value)}>
-              <option value="email">Email</option>
-              <option value="phone">Phone</option>
-              <option value="whatsapp">WhatsApp</option>
+              <option value="email">{t('wizard.email')}</option>
+              <option value="phone">{t('wizard.phone')}</option>
+              <option value="whatsapp">{t('wizard.whatsapp')}</option>
             </select>
             <div className="flex justify-between mt-6">
               <button className="bg-light-gray text-navy px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-gray-300 transition-colors" onClick={handlePrev}>

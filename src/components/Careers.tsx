@@ -1,4 +1,6 @@
+import { useI18n } from '../context/I18nContext';
 export function Careers() {
+  const { t } = useI18n();
   const jobs = [
     { title: 'Senior Project Manager', location: 'Accra, Ghana' },
     { title: 'Interior Designer (Fit‑Out)', location: 'Accra, Ghana' },
@@ -9,8 +11,8 @@ export function Careers() {
     <section id="careers" className="py-20 bg-light-gray">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">Careers</h2>
-          <p className="text-steel-blue text-lg">Join our team of precision professionals</p>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">{t('comp.careers.title')}</h2>
+          <p className="text-steel-blue text-lg">{t('comp.careers.sub')}</p>
         </div>
         <div className="max-w-3xl mx-auto flex flex-col gap-4">
           {jobs.map((job, idx) => (

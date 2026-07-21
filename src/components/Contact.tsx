@@ -1,8 +1,10 @@
+import { useI18n } from '../context/I18nContext';
 import React from "react";
 import { useState } from 'react';
 import { Phone, MessageCircle, Mail, MapPin, Facebook, Linkedin, Instagram, Youtube } from 'lucide-react';
 
 export function Contact() {
+  const { t } = useI18n();
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -15,8 +17,8 @@ export function Contact() {
     <section id="contact" className="py-20">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">Contact Us</h2>
-          <p className="text-steel-blue text-lg">Start your project with a conversation</p>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">{t('comp.contact.title')}</h2>
+          <p className="text-steel-blue text-lg">{t('comp.contact.sub')}</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
           
@@ -60,12 +62,12 @@ export function Contact() {
             <button type="submit" className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-wide hover:bg-navy transition-colors self-start mt-2">
               Send Message
             </button>
-            {submitted && <p className="text-green-600 font-medium mt-2">Thank you for your enquiry. Our team will respond within 24 hours.</p>}
+            {submitted && <p className="text-green-600 font-medium mt-2">{t('comp.contact.success')}</p>}
           </form>
 
           <div>
-            <h3 className="font-sans font-semibold text-2xl text-navy mb-2">Get in touch</h3>
-            <p className="text-steel-blue mb-8">We respond to all enquiries within 24 hours.</p>
+            <h3 className="font-sans font-semibold text-2xl text-navy mb-2">{t('comp.contact.touch')}</h3>
+            <p className="text-steel-blue mb-8">{t('comp.contact.resp')}</p>
             
             <div className="space-y-4 mb-8">
               <div className="flex items-center gap-4">

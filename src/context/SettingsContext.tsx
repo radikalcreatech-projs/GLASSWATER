@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface WebsiteSettings {
+  companyName: string;
   logoUrl: string;
   contactImageUrl: string;
   phone: string;

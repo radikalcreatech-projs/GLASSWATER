@@ -1,0 +1,38 @@
+const fs = require('fs');
+let data = fs.readFileSync('src/components/WizardModal.tsx', 'utf8');
+
+data = data.replace(/>Select type\.\.\.</g, ">{t('wizard.type_select')}<");
+data = data.replace(/"new-build">New Build</g, `"new-build">{t('wizard.new_build')}<`);
+data = data.replace(/"renovation">Renovation</g, `"renovation">{t('wizard.renovation')}<`);
+data = data.replace(/"fit-out">Fit-Out</g, `"fit-out">{t('wizard.fit_out')}<`);
+data = data.replace(/"maintenance">Maintenance</g, `"maintenance">{t('wizard.maintenance')}<`);
+data = data.replace(/"waterproofing">Waterproofing</g, `"waterproofing">{t('wizard.waterproofing')}<`);
+data = data.replace(/placeholder="Address"/g, `placeholder={t('wizard.address')}`);
+data = data.replace(/placeholder="Describe your needs\.\.\."/g, `placeholder={t('wizard.scope_desc')}`);
+data = data.replace(/> Electrical</g, `> {t('wizard.electrical')}<`);
+data = data.replace(/> Plumbing</g, `> {t('wizard.plumbing')}<`);
+data = data.replace(/> Carpentry</g, `> {t('wizard.carpentry')}<`);
+data = data.replace(/> Painting</g, `> {t('wizard.painting')}<`);
+data = data.replace(/>Select budget range\.\.\.</g, `>{t('wizard.budget_select')}<`);
+data = data.replace(/"under-10k">Under GHS 10,000</g, `"under-10k">{t('wizard.under_10k')}<`);
+data = data.replace(/"10-50k">GHS 10,000 – 50,000</g, `"10-50k">{t('wizard.budget_1')}<`);
+data = data.replace(/"50-100k">GHS 50,000 – 100,000</g, `"50-100k">{t('wizard.budget_2')}<`);
+data = data.replace(/"100-500k">GHS 100,000 – 500,000</g, `"100-500k">{t('wizard.budget_3')}<`);
+data = data.replace(/"over-500k">Over GHS 500,000</g, `"over-500k">{t('wizard.over_500k')}<`);
+data = data.replace(/>Urgency\.\.\.</g, `>{t('wizard.urgency_select')}<`);
+data = data.replace(/"immediate">Immediate \(within 1 week\)</g, `"immediate">{t('wizard.immediate')}<`);
+data = data.replace(/"soon">Soon \(1-4 weeks\)</g, `"soon">{t('wizard.soon')}<`);
+data = data.replace(/"planned">Planned \(1-3 months\)</g, `"planned">{t('wizard.planned')}<`);
+data = data.replace(/>Max 5 files \(images, PDFs, DWG\)</g, `>{t('wizard.max_files')}<`);
+data = data.replace(/"email">Email</g, `"email">{t('wizard.email')}<`);
+data = data.replace(/"phone">Phone</g, `"phone">{t('wizard.phone')}<`);
+data = data.replace(/"whatsapp">WhatsApp</g, `"whatsapp">{t('wizard.whatsapp')}<`);
+data = data.replace(/placeholder="Full Name"/g, `placeholder={t('wizard.fullname')}`);
+data = data.replace(/>Next</g, `>{t('wizard.next')}<`);
+data = data.replace(/>Back</g, `>{t('wizard.prev')}<`);
+data = data.replace(/>Submit</g, `>{t('wizard.submit')}<`);
+data = data.replace(/Thank you! We will review your project and get back to you within 24 hours\./g, `{t('wizard.submit_success')}`);
+data = data.replace(/Email Address/g, `{t('portal.email_address')}`);
+data = data.replace(/Phone Number/g, `{t('portal.contact_phone')}`);
+
+fs.writeFileSync('src/components/WizardModal.tsx', data);

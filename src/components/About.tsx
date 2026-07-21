@@ -1,11 +1,13 @@
+import { useI18n } from '../context/I18nContext';
 import { Check } from 'lucide-react';
 
 export function About() {
+  const { t } = useI18n();
   return (
     <section id="about" className="py-20">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">About Glasswater</h2>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">{t('comp.about.title')}</h2>
           <p className="text-steel-blue text-lg">Integrated excellence in engineering and fit‑out</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -16,11 +18,11 @@ export function About() {
             <ul className="space-y-3 mb-8">
               <li className="flex items-center gap-3">
                 <Check className="text-gold w-5 h-5 shrink-0" />
-                <span>Precision, Integrity, Safety, Innovation</span>
+                <span>{t('comp.about.vals1')}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Check className="text-gold w-5 h-5 shrink-0" />
-                <span>Quality, Professionalism, Accountability, Reliability</span>
+                <span>{t('comp.about.vals2')}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Check className="text-gold w-5 h-5 shrink-0" />

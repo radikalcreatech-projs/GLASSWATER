@@ -1,3 +1,4 @@
+import { useI18n } from '../context/I18nContext';
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useNavigation } from '../context/NavigationContext';
@@ -66,7 +67,7 @@ export function SearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
         />
         <div>
           {query && results.length === 0 && (
-            <p className="text-text-secondary">No results found.</p>
+            <p className="text-text-secondary">{t('search.no_results')}</p>
           )}
           {results.map((r, i) => (
             <div 

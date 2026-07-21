@@ -1,3 +1,4 @@
+import { useI18n } from '../context/I18nContext';
 import { useState } from 'react';
 import { Settings, Zap, Compass, HardHat, PenTool, ListChecks, Sofa, Hotel, Home, Paintbrush, Grid, DoorOpen, Droplets, ArrowDownSquare, Shield, Waves, Filter, Wrench, Building2, ClipboardList, TrendingUp } from 'lucide-react';
 
@@ -63,6 +64,7 @@ const serviceData = {
 type TabKey = keyof typeof serviceData;
 
 export function Services() {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<TabKey>('engineering');
 
   const tabs: { key: TabKey; label: string }[] = [
@@ -81,8 +83,8 @@ export function Services() {
     <section id="services" className="py-20 bg-light-gray">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">Our Solutions</h2>
-          <p className="text-steel-blue text-lg">Comprehensive services across the project lifecycle</p>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">{t('comp.services.title')}</h2>
+          <p className="text-steel-blue text-lg">{t('comp.services.sub')}</p>
         </div>
 
         <div className="flex flex-wrap justify-center gap-3 mb-10">

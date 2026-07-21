@@ -1,0 +1,48 @@
+const fs = require('fs');
+let data = fs.readFileSync('src/data.ts', 'utf8');
+
+data = data.replace(/'portal\.pdf_error': 'Failed to generate PDF\. You can also use the Print button\.',/, `'portal.pdf_error': 'Failed to generate PDF. You can also use the Print button.',
+    'portal.doc_access': 'Client Document Access',
+    'portal.doc_ref': 'Document Ref:',
+    'portal.doc_date': 'Generated Date:',
+    'portal.client_name': 'Client Name',
+    'portal.contact_phone': 'Contact Phone',
+    'portal.email_address': 'Email Address',
+    'portal.statement': 'Statement of Accounts',
+    'portal.no_items': 'No itemized breakdown is recorded. Please see the attached PDF copy or contact our accounts office.',
+    'portal.item_desc': 'Item Description',
+    'portal.qty': 'Qty',
+    'portal.unit_price': 'Unit Price',
+    'portal.line_total': 'Line Total',
+    'portal.discount': 'Discount',
+    'portal.total_amount': 'Total Amount:',
+    'portal.payment_info': 'Payment Information',
+    'portal.terms': 'Terms & Important Instructions',
+    'portal.thank_you': 'Thank you for choosing Glasswater. We appreciate your valued business.',
+    'portal.questions': 'Have questions about this Statement?',
+    'portal.get_in_touch': 'Get in touch directly with our support team to verify estimate details or approve work.',
+    'portal.email_office': 'Email Office',`);
+
+data = data.replace(/'portal\.pdf_error': 'Échec de la génération du PDF\. Vous pouvez également utiliser le bouton Imprimer\.',/, `'portal.pdf_error': 'Échec de la génération du PDF. Vous pouvez également utiliser le bouton Imprimer.',
+    'portal.doc_access': 'Accès au document client',
+    'portal.doc_ref': 'Réf. du document :',
+    'portal.doc_date': 'Date de génération :',
+    'portal.client_name': 'Nom du client',
+    'portal.contact_phone': 'Téléphone',
+    'portal.email_address': 'Adresse e-mail',
+    'portal.statement': 'Relevé de compte',
+    'portal.no_items': 'Aucune ventilation détaillée n\\'est enregistrée. Veuillez consulter la copie PDF jointe ou contacter notre service comptable.',
+    'portal.item_desc': 'Description de l\\'article',
+    'portal.qty': 'Qté',
+    'portal.unit_price': 'Prix unitaire',
+    'portal.line_total': 'Total partiel',
+    'portal.discount': 'Remise',
+    'portal.total_amount': 'Montant total :',
+    'portal.payment_info': 'Informations de paiement',
+    'portal.terms': 'Conditions et instructions importantes',
+    'portal.thank_you': 'Merci d\\'avoir choisi Glasswater. Nous apprécions votre fidélité.',
+    'portal.questions': 'Avez-vous des questions concernant ce relevé ?',
+    'portal.get_in_touch': 'Contactez directement notre équipe d\\'assistance pour vérifier les détails de l\\'estimation ou approuver les travaux.',
+    'portal.email_office': 'Bureau des e-mails',`);
+
+fs.writeFileSync('src/data.ts', data);

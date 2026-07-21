@@ -1,6 +1,8 @@
+import { useI18n } from '../context/I18nContext';
 import { ArrowRight } from 'lucide-react';
 
 export function Projects() {
+  const { t } = useI18n();
   const projects = [
     {
       title: 'Commercial Office Tower',
@@ -26,8 +28,8 @@ export function Projects() {
     <section id="projects" className="py-20 bg-light-gray">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">Project Portfolio</h2>
-          <p className="text-steel-blue text-lg">Excellence in every delivery</p>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">{t('comp.projects.title')}</h2>
+          <p className="text-steel-blue text-lg">{t('comp.projects.sub')}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {projects.map((proj, idx) => (

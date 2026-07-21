@@ -73,17 +73,17 @@ export function HomePage() {
           <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <CheckCircle2 className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">150+</span>
-            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">Projects</span>
+            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.proj')}</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <Building2 className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">50+</span>
-            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">Commercial</span>
+            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.comm')}</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <Star className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">90%</span>
-            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">Satisfaction</span>
+            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.sat')}</span>
           </div>
         </div>
       </section>
@@ -91,7 +91,7 @@ export function HomePage() {
       {/* About Section - Lots of whitespace */}
       <section className="py-8 md:py-12 px-4 bg-white border border-gold m-3 sm:m-4 lg:m-6 rounded-xl">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-4">About Us</h2>
+          <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-4">{t('home.about_label')}</h2>
           <h3 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-4 leading-tight">
             Building the Future with Precision
           </h3>
@@ -112,8 +112,8 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
             <div>
-              <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">Featured Work</h2>
-              <h3 className="font-serif text-3xl md:text-4xl font-bold text-navy">Premium Projects</h3>
+              <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">{t('home.feat_work')}</h2>
+              <h3 className="font-serif text-3xl md:text-4xl font-bold text-navy">{t('home.prem_proj')}</h3>
             </div>
             <button 
               onClick={() => navigate('projects')}
@@ -149,8 +149,8 @@ export function HomePage() {
         <section className="py-8 md:py-12 px-4 md:px-6 bg-navy text-white border border-gold m-3 sm:m-4 lg:m-6 rounded-xl">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-6">
-              <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">Testimonials</h2>
-              <h3 className="font-serif text-3xl md:text-4xl font-bold">Client Feedback</h3>
+              <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">{t('home.testi')}</h2>
+              <h3 className="font-serif text-3xl md:text-4xl font-bold">{t('home.client_feed')}</h3>
             </div>
             
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible no-scrollbar">
@@ -191,7 +191,7 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-6 md:mb-8">
             <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">Insights & News</h2>
-            <h3 className="font-serif text-3xl md:text-4xl font-bold text-navy">Knowledge Centre</h3>
+            <h3 className="font-serif text-3xl md:text-4xl font-bold text-navy">{t('home.know_centre')}</h3>
           </div>
           
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible no-scrollbar">

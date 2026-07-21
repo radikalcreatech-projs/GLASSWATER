@@ -24,8 +24,8 @@ export function InsightsPage() {
         <div className="max-w-7xl mx-auto">
         <div className="text-center mb-6 max-w-3xl mx-auto">
           <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">Insights & News</h2>
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-navy mb-4">Knowledge Centre</h1>
-          <p className="text-base md:text-lg text-text-secondary leading-relaxed">Industry trends, company updates, and expert perspectives.</p>
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-navy mb-4">{t('insights.title')}</h1>
+          <p className="text-base md:text-lg text-text-secondary leading-relaxed">{t('insights.sub')}</p>
         </div>
         
         <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 md:overflow-visible no-scrollbar">

@@ -58,7 +58,7 @@ export function ReviewsPage() {
       <section className="py-6 md:py-10 px-4 md:px-6 border border-gold m-3 sm:m-4 lg:m-6 rounded-xl bg-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-6 max-w-2xl mx-auto">
-            <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">Feedback</h2>
+            <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">{t('reviews.feedback')}</h2>
             <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-navy mb-4">{t('reviews.title')}</h1>
             <p className="text-base md:text-lg text-text-secondary leading-relaxed">{t('reviews.sub')}</p>
           </div>
@@ -67,7 +67,7 @@ export function ReviewsPage() {
           <input type="text" placeholder="Your Name" required className={inputClass} value={name} onChange={e => setName(e.target.value)} />
           <input type="text" placeholder="Your Location (e.g., Accra)" className={inputClass} value={location} onChange={e => setLocation(e.target.value)} />
           <select required className={inputClass} value={rating} onChange={e => setRating(e.target.value)}>
-            <option value="">Rating</option>
+            <option value="">{t('reviews.rating')}</option>
             <option value="5">★★★★★ (5)</option>
             <option value="4">★★★★ (4)</option>
             <option value="3">★★★ (3)</option>
@@ -83,7 +83,7 @@ export function ReviewsPage() {
         <div className="max-w-3xl mx-auto">
           <h2 className="font-serif text-2xl md:text-3xl font-bold text-navy mb-6 md:mb-8 text-center">{t('reviews.latest')}</h2>
           {reviews.length === 0 ? (
-            <p className="text-center text-text-secondary text-base">No reviews yet. Be the first to share your experience!</p>
+            <p className="text-center text-text-secondary text-base">{t('reviews.empty')}</p>
           ) : (
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-1 md:gap-6 md:overflow-visible no-scrollbar">
               {reviews.map((r, i) => (

@@ -21,7 +21,7 @@ export function PostPage() {
   if (!post) {
     return (
       <div className="py-6 text-center">
-        <p className="text-text-secondary text-xl mb-6">Article not found.</p>
+        <p className="text-text-secondary text-xl mb-6">{t('post.not_found')}</p>
         <button 
           className="bg-transparent border border-gold text-gold px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-gold hover:text-white transition-all" 
           onClick={() => navigate('insights')}
@@ -79,7 +79,7 @@ export function PostPage() {
                 GW
               </div>
               <div>
-                <div className="font-bold text-navy">GlassWater Editorial</div>
+                <div className="font-bold text-navy">{t('post.editorial')}</div>
                 <div className="text-sm text-text-secondary">Engineering & Construction Experts</div>
               </div>
             </div>
