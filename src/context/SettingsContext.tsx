@@ -46,6 +46,7 @@ export interface ClientDocument {
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
+  companyName: "Glasswater Fit-Outs 0026 Co. Ltd.",
   logoUrl: 'https://lh3.googleusercontent.com/d/17P2w-kaeNW06Xb5OTU1UK-sRLSV4RUsy',
   contactImageUrl: 'https://lh3.googleusercontent.com/d/1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6c',
   phone: '0248284384',

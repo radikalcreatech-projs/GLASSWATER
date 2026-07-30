@@ -1,4 +1,4 @@
-import { Phone, MessageCircle, Mail, MapPin } from 'lucide-react';
+import { Phone, MessageCircle, Mail, MapPin, Facebook, Instagram, Linkedin, Music2 } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
 import { useNavigation } from '../context/NavigationContext';
 import { useSettings } from '../context/SettingsContext';

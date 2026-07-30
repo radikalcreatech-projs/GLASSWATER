@@ -7,6 +7,7 @@ import { projects, posts, faqs } from '../data';
 export function SearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [query, setQuery] = useState('');
   const { navigate } = useNavigation();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (isOpen) {

@@ -12,7 +12,7 @@ interface Review {
 }
 
 export function ReviewsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [reviews, setReviews] = useState<Review[]>([]);
   
   const [name, setName] = useState('');
@@ -29,8 +29,8 @@ export function ReviewsPage() {
         console.error('Failed to parse reviews');
       }
     } else {
-      setReviews(defaultReviews);
-      localStorage.setItem('glasswater_reviews', JSON.stringify(defaultReviews));
+      setReviews(getReviews(lang));
+      localStorage.setItem('glasswater_reviews', JSON.stringify(getReviews(lang)));
     }
   }, []);
 
