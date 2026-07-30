@@ -183,7 +183,7 @@ export function PortalPage() {
                 {t('portal.no_items')}
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto print:overflow-visible">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-light-gray text-navy text-[10px] uppercase tracking-widest font-bold">
