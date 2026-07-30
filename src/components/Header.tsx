@@ -40,14 +40,14 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
         </div>
 
         <div className="flex items-center gap-1 md:gap-4 order-2 lg:order-none ml-auto lg:ml-0">
-          <button 
+          {currentPage !== 'admin' && (<button 
             className="flex items-center justify-center text-text-primary hover:text-gold transition-colors font-sans text-[0.65rem] md:text-[0.7rem] font-bold uppercase tracking-widest whitespace-nowrap px-2"
             onClick={() => setLang(lang === 'en' ? 'fr' : 'en')}
             aria-label="Toggle Language"
             title={t('lang.switch')}
           >
             {lang === 'en' ? 'FR' : 'EN'}
-          </button>
+          </button>)}
           
 
           <button 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSettings } from '../context/SettingsContext';
+import html2pdf from 'html2pdf.js';
 import { FileText, ArrowLeft, Printer, Download, Mail, MapPin, Phone, MessageCircle, ShieldCheck } from 'lucide-react';
 
 export function PortalPage() {
@@ -28,8 +29,7 @@ export function PortalPage() {
   const handleDownloadPDF = async () => {
     if (!retrievedDoc) return;
     try {
-      const html2pdfModule = await import('html2pdf.js');
-      const html2pdf = html2pdfModule.default || html2pdfModule;
+      
       const element = document.getElementById('printable-document');
       const opt = {
         margin:       [10, 10, 10, 10],
@@ -91,7 +91,7 @@ export function PortalPage() {
           <div className="flex gap-3">
             <button 
               onClick={handleDownloadPDF} 
-              className="bg-navy/5 border border-navy/20 hover:bg-navy/10 text-navy px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer"
+              className="bg-navy/5 border border-navy/20 hover:bg-navy/10 text-navy px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer relative z-10"
             >
               <Download size={14} /> {t('portal.download_pdf')}
             </button>
@@ -107,7 +107,7 @@ export function PortalPage() {
             )}
             <button 
               onClick={handlePrint} 
-              className="bg-gold hover:bg-navy text-white px-5 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer"
+              className="bg-gold hover:bg-navy text-white px-5 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer relative z-10"
             >
               <Printer size={14} /> {t('portal.print')}
             </button>
@@ -297,7 +297,7 @@ export function PortalPage() {
             <input 
               type="text" 
               required
-              placeholder="e.g. GW-DEMO" 
+              placeholder="Enter Code" 
               value={refCode}
               onChange={e => setRefCode(e.target.value)}
               className="w-full sm:flex-1 p-4 border-none rounded font-sans text-base focus:outline-none focus:ring-2 focus:ring-gold bg-white text-text-primary uppercase"

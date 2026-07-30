@@ -185,7 +185,7 @@ export function AdminPage() {
   
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin123') { // Simple mock auth
+    if (password === (settings.adminPassword || 'GWADMIN')) { // Simple mock auth
       setIsAuthenticated(true);
     } else {
       alert('Invalid password (hint: admin123)');
@@ -268,7 +268,7 @@ export function AdminPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-light-gray border border-transparent focus:border-gold px-4 py-3 rounded outline-none transition-colors"
-              placeholder="Enter admin password (admin123)"
+              placeholder="Enter Admin Password"
             />
           </div>
           <button type="submit" className="w-full bg-gold text-white font-semibold py-3 rounded uppercase tracking-widest hover:bg-navy transition-colors">
@@ -431,11 +431,11 @@ export function AdminPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Value</label>
-                    <input type="text" value={editingItem.value} onChange={e => setEditingItem({...editingItem, value: e.target.value})} className={inputClass} placeholder="e.g. £2.5M" />
+                    <input type="text" value={editingItem.value} onChange={e => setEditingItem({...editingItem, value: e.target.value})} className={inputClass} placeholder="Budget" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Duration</label>
-                    <input type="text" value={editingItem.duration} onChange={e => setEditingItem({...editingItem, duration: e.target.value})} className={inputClass} placeholder="e.g. 14 Months" />
+                    <input type="text" value={editingItem.duration} onChange={e => setEditingItem({...editingItem, duration: e.target.value})} className={inputClass} placeholder="Duration" />
                   </div>
                 </div>
 
@@ -672,7 +672,7 @@ export function AdminPage() {
                             type="text" 
                             required 
                             disabled={documents.some(d => d.code === editingDoc.code)}
-                            placeholder="e.g. GW-2024" 
+                            placeholder="Enter Code" 
                             value={editingDoc.code} 
                             onChange={e => setEditingDoc({ ...editingDoc, code: e.target.value.toUpperCase().replace(/\s+/g, '') })} 
                             className={`${inputClass} !mb-0 disabled:opacity-50 disabled:bg-gray-100`} 
@@ -739,7 +739,7 @@ export function AdminPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="md:col-span-2">
                         <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Project / Document Title</label>
-                        <input type="text" required placeholder="e.g. Commercial Interior Finishing and Partitioning Works" value={editingDoc.title} onChange={e => setEditingDoc({ ...editingDoc, title: e.target.value })} className={inputClass} />
+                        <input type="text" required placeholder="Enter Project Title" value={editingDoc.title} onChange={e => setEditingDoc({ ...editingDoc, title: e.target.value })} className={inputClass} />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Issue Date</label>
@@ -785,7 +785,7 @@ export function AdminPage() {
                                     <input 
                                       type="text" 
                                       required 
-                                      placeholder="e.g. Copper conduit wiring installations" 
+                                      placeholder="Description" 
                                       value={item.description} 
                                       onChange={e => handleDocItemChange(item.id, 'description', e.target.value)} 
                                       className="w-full bg-transparent border-b border-transparent focus:border-gold outline-none py-1"
@@ -867,7 +867,7 @@ export function AdminPage() {
                             value={editingDoc.discountValue || ''}
                             onChange={e => handleDocDiscountChange('discountValue', e.target.value)}
                             className={inputClass}
-                            placeholder={editingDoc.discountType === 'percentage' ? "e.g. 10" : "e.g. 500"}
+                            placeholder={editingDoc.discountType === 'percentage' ? "10" : "500"}
                           />
                         </div>
                       )}

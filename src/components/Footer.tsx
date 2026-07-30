@@ -44,9 +44,12 @@ export function Footer() {
             <a href={settings.whatsapp} target="_blank" rel="noreferrer" className="text-[#25D366] font-semibold hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]">
               <MessageCircle size={14} /> {t('social.whatsapp')}
             </a>
-            <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('social.facebook')}</a>
-            <a href={settings.instagram} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('social.instagram')}</a>
-            <a href={settings.linkedin} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('social.linkedin')}</a>
+            <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]"><Facebook size={14} /> {t('social.facebook')}</a>
+            <a href={settings.instagram} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]"><Instagram size={14} /> {t('social.instagram')}</a>
+            <a href={settings.linkedin} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]"><Linkedin size={14} /> {t('social.linkedin')}</a>
+            {settings.tiktok && (
+              <a href={settings.tiktok} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]"><Music2 size={14} /> {t('social.tiktok')}</a>
+            )}
           </div>
         </div>
       </div>

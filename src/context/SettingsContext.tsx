@@ -11,7 +11,10 @@ export interface WebsiteSettings {
   facebook: string;
   instagram: string;
   linkedin: string;
+  tiktok?: string;
   paymentDetails: string;
+  adminPassword?: string;
+  termsAndConditions?: string;
 }
 
 export interface DocumentItem {
@@ -39,6 +42,7 @@ export interface ClientDocument {
   discountValue?: number;
   includePaymentDetails?: boolean;
   fileUrl?: string;
+  includeTerms?: boolean;
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {

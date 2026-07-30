@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
-import { defaultReviews } from '../data';
+import { getReviews } from '../data';
 
 interface Review {
   name: string;

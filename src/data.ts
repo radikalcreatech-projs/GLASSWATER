@@ -318,7 +318,23 @@ export const translations: Record<string, Record<string, string>> = {
     'nav.insights': 'Insights',
     'nav.reviews': 'Reviews',
     'nav.contact': 'Contact',
-    'nav.portal': 'View Estimate',
+    
+    'nav.quote': 'Quote',
+    
+    'home.swipe': 'Swipe to explore',
+    
+    'nav.portal': 'Code',
+    'portal.date_issued': 'Date Issued',
+    'portal.due_date': 'Due Date',
+    'social.facebook': 'Facebook',
+    'social.instagram': 'Instagram',
+    'social.linkedin': 'LinkedIn',
+    'social.whatsapp': 'WhatsApp',
+    'social.tiktok': 'TikTok',
+    'btn.explore_projects': 'Explore Projects',
+    'btn.view_project': 'View Project',
+    'btn.all_projects': 'All Projects',
+
     'wizard.step6': 'Your Contact Information'
   },
   fr: {
@@ -534,7 +550,20 @@ export const translations: Record<string, Record<string, string>> = {
     'nav.insights': 'Actualités',
     'nav.reviews': 'Avis',
     'nav.contact': 'Contact',
-    'nav.portal': 'Voir Devis',
+    
+    'nav.quote': 'Devis',
+    'nav.portal': 'Code',
+    'portal.date_issued': 'Date d\'émission',
+    'portal.due_date': 'Date d\'échéance',
+    'social.facebook': 'Facebook',
+    'social.instagram': 'Instagram',
+    'social.linkedin': 'LinkedIn',
+    'social.whatsapp': 'WhatsApp',
+    'social.tiktok': 'TikTok',
+    'btn.explore_projects': 'Explorer Projets',
+    'btn.view_project': 'Voir Projet',
+    'btn.all_projects': 'Tous Projets',
+
     'wizard.step6': 'Vos coordonnées'
   }
 };
@@ -562,4 +591,33 @@ export const defaultReviews = [
     date: 1718275200000
   }
 ];
+
+export const defaultReviewsFR = [
+  {
+    name: 'Kofi Mensah',
+    location: 'Airport Residential Area, Accra',
+    rating: 5,
+    text: 'Glasswater a terminé l\'aménagement de notre nouveau siège social avant la date prévue. Le savoir-faire dans les cloisons vitrées et les finitions est impeccable. Fortement recommandé !',
+    date: 1717843200000
+  },
+  {
+    name: 'Naa Adjeley',
+    location: 'East Legon, Accra',
+    rating: 5,
+    text: 'Nous avions une humidité persistante et des fuites de toit dans notre entrepôt depuis des années. Glasswater a appliqué son système d\'étanchéité liquide multicouche et nous sommes au sec depuis.',
+    date: 1718016000000
+  },
+  {
+    name: 'Ekow Benson',
+    location: 'Tema Community 6',
+    rating: 4,
+    text: 'Superbe gestion de projet et ingénierie structurelle. Leur division de construction de piscines est également à la pointe de la technologie. La communication a été excellente tout au long du projet.',
+    date: 1718275200000
+  }
+];
+
+export function getReviews(lang) {
+  return lang === 'fr' ? defaultReviewsFR : defaultReviews;
+}
+
 
