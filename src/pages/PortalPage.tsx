@@ -35,7 +35,7 @@ export function PortalPage() {
         margin:       10,
         filename:     `${retrievedDoc.code}_${retrievedDoc.clientName}.pdf`,
         image:        { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { scale: 2, useCORS: true, windowWidth: 1024 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
       };
       html2pdf().set(opt).from(element).save();
@@ -118,7 +118,7 @@ export function PortalPage() {
         <div id="printable-document" className="bg-white rounded-xl shadow-custom border border-gold/20 p-4 sm:p-6 md:p-12 print:border-none print:shadow-none print:p-0 text-sm">
           
           {/* Header Row */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-light-gray pb-8 mb-8 gap-6">
+          <div className="flex flex-col sm:flex-row print:flex-row justify-between items-start sm:items-center print:items-center border-b border-light-gray pb-8 mb-8 gap-6">
             <div className="flex items-center gap-4">
               <img src={settings.logoUrl} alt="Glasswater Logo" className="h-16 w-auto object-contain" />
               <div className="leading-none">
@@ -127,7 +127,7 @@ export function PortalPage() {
               </div>
             </div>
 
-            <div className="text-left sm:text-right">
+            <div className="text-left sm:text-right print:text-right">
               <span className={`inline-block px-3 py-1 rounded text-xs font-bold uppercase tracking-widest mb-2 ${
                 retrievedDoc.type === 'Estimate' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
                 retrievedDoc.type === 'Waybill' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
@@ -142,7 +142,7 @@ export function PortalPage() {
           </div>
 
           {/* Parties Block */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-8 mb-8">
             <div>
               <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest mb-3 border-b border-light-gray pb-1">{t('portal.issued_by')}</h4>
               <div className="font-semibold text-navy text-base">{settings.companyName || 'Glasswater Fit-Outs & Co. Ltd.'}</div>
