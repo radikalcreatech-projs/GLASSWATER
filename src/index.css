@@ -15,19 +15,7 @@
   --color-text-secondary-base: #2F4F6B;
 }
 
-.dark {
-  --color-navy-base: #FFFFFF;
-  --color-steel-blue-base: #E2E8F0;
-  --color-concrete-gray-base: #8B939D;
-  --color-light-gray-base: #1E293B; /* inverted light gray for borders */
-  --color-gold-base: #C89B3C;
-  --color-charcoal-base: #F8FAFC;
-  --color-bg-body-base: #020617; /* Slate 950 */
-  --color-bg-card-base: #0F172A; /* Slate 900 */
-  --color-bg-section-base: #0F172A; 
-  --color-text-primary-base: #F8FAFC;
-  --color-text-secondary-base: #CBD5E1;
-}
+
 
 @theme {
   --color-navy: var(--color-navy-base);
@@ -60,9 +48,7 @@ body {
 .shadow-custom {
   box-shadow: 0 8px 30px rgba(0,0,0,0.06);
 }
-.dark .shadow-custom {
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-}
+
 
 @keyframes fadeInSlideUp {
   from {

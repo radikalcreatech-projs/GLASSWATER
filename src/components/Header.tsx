@@ -3,14 +3,12 @@ import { Menu, X, Search, Moon, Sun, Globe } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
 import { useNavigation, Page } from '../context/NavigationContext';
 import { useSettings } from '../context/SettingsContext';
-import { useDarkMode } from '../hooks/useDarkMode';
 
 export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => void; onOpenWizard: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const { t, lang, setLang } = useI18n();
   const { currentPage, navigate } = useNavigation();
   const { settings } = useSettings();
-  const { isDark, toggle } = useDarkMode();
 
   const navLinks: { page: Page; key: string }[] = [
     { page: 'home', key: 'nav.home' },
@@ -48,16 +46,9 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
             aria-label="Toggle Language"
             title={t('lang.switch')}
           >
-            {t('lang.switch')}
+            {lang === 'en' ? 'FR' : 'EN'}
           </button>
           
-          <button 
-            className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-text-primary hover:text-gold transition-colors"
-            onClick={toggle}
-            aria-label="Toggle Dark Mode"
-          >
-            {isDark ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
 
           <button 
             className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-text-primary hover:text-gold transition-colors"
@@ -93,7 +84,7 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
 
       {/* Mobile Nav */}
       {isOpen && (
-        <nav className="lg:hidden absolute top-full left-0 w-full bg-white shadow-xl px-5 py-5 flex flex-col gap-4 border-t border-gray-100">
+        <nav className="lg:hidden absolute top-full left-0 w-full bg-white shadow-xl px-5 py-5 flex flex-col gap-4 border-t border-gray-100 max-h-[80vh] overflow-y-auto">
           {navLinks.map((link) => (
             <button
               key={link.page}
@@ -123,7 +114,7 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
               }}
               className="bg-gold text-white py-2.5 rounded font-semibold hover:bg-navy transition-colors text-center uppercase tracking-widest text-[0.65rem] sm:text-xs"
             >
-              Request Quote
+              {t('nav.quote')}
             </button>
           </div>
         </nav>

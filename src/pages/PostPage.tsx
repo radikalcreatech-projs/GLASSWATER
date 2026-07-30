@@ -1,22 +1,27 @@
+import { useI18n } from '../context/I18nContext';
 import { useState, useEffect } from 'react';
 import { useNavigation } from '../context/NavigationContext';
-import { posts as defaultPosts } from '../data';
+import { getPosts } from '../data';
 import { ArrowLeft } from 'lucide-react';
 
 export function PostPage() {
+  const { t, lang } = useI18n();
   const { currentPostSlug, navigate } = useNavigation();
-  const [posts, setPosts] = useState(defaultPosts);
+  const [posts, setPosts] = useState(getPosts(lang));
 
   useEffect(() => {
     const saved = localStorage.getItem('glasswater_posts');
     if (saved) {
       try {
-        setPosts(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setPosts([...parsed.filter((p: any) => !posts.find(dp => dp.slug === p.slug)), ...getPosts(lang)]);
       } catch (e) {}
+    } else {
+      setPosts(getPosts(lang));
     }
-  }, []);
+  }, [lang]);
 
-  const post = posts.find(p => p.slug === currentPostSlug);
+  const post = getPosts(lang).find(p => p.slug === currentPostSlug);
 
   if (!post) {
     return (
@@ -26,7 +31,7 @@ export function PostPage() {
           className="bg-transparent border border-gold text-gold px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-gold hover:text-white transition-all" 
           onClick={() => navigate('insights')}
         >
-          ← Back to Insights
+          ← {t('post.back')}
         </button>
       </div>
     );
@@ -61,7 +66,7 @@ export function PostPage() {
             className="flex items-center gap-2 text-gold font-semibold uppercase tracking-widest mb-12 hover:-translate-x-2 transition-transform" 
             onClick={() => navigate('insights')}
           >
-            <ArrowLeft size={20} /> Back to Insights
+            <ArrowLeft size={20} /> {t('post.back')}
           </button>
           
           <div className="prose prose-lg max-w-none text-text-secondary">
@@ -80,13 +85,13 @@ export function PostPage() {
               </div>
               <div>
                 <div className="font-bold text-navy">{t('post.editorial')}</div>
-                <div className="text-sm text-text-secondary">Engineering & Construction Experts</div>
+                <div className="text-sm text-text-secondary">{t('post.experts')}</div>
               </div>
             </div>
             
             <div className="flex gap-4">
               <button className="px-6 py-3 border border-light-gray rounded hover:border-gold hover:text-gold transition-colors font-semibold uppercase tracking-widest text-sm">
-                Share Article
+                {t('post.share')}
               </button>
             </div>
           </div>

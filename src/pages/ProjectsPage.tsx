@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
-import { projects as defaultProjects } from '../data';
+import { getProjects } from '../data';
 import { ArrowRight } from 'lucide-react';
 
 export function ProjectsPage() {
-  const { t } = useI18n();
-  const [projects, setProjects] = useState(defaultProjects);
+  const { t, lang } = useI18n();
+  const [projects, setProjects] = useState(getProjects(lang));
 
   useEffect(() => {
     const saved = localStorage.getItem('glasswater_projects');
     if (saved) {
       try {
-        setProjects(JSON.parse(saved));
+        const parsed = JSON.parse(saved); setProjects([...parsed, ...getProjects(lang).filter(p => !parsed.find(op => op.id === p.id))]);
       } catch (e) {}
     }
-  }, []);
+  }, [lang]);
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">

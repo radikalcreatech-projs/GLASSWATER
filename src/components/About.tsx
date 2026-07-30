@@ -8,12 +8,12 @@ export function About() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">{t('comp.about.title')}</h2>
-          <p className="text-steel-blue text-lg">Integrated excellence in engineering and fit‑out</p>
+          <p className="text-steel-blue text-lg">{t('comp.about.sub')}</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div>
             <p className="text-lg text-charcoal mb-6">
-              We are an integrated construction, engineering, interior fit‑out and facilities management company delivering commercial, industrial, hospitality, institutional and residential projects across West Africa.
+              {t('comp.about.desc')}
             </p>
             <ul className="space-y-3 mb-8">
               <li className="flex items-center gap-3">
@@ -26,11 +26,11 @@ export function About() {
               </li>
               <li className="flex items-center gap-3">
                 <Check className="text-gold w-5 h-5 shrink-0" />
-                <span>Vision: West Africa’s most trusted fit‑out and building solutions company</span>
+                <span>{t('comp.about.vision')}</span>
               </li>
             </ul>
             <a href="#" className="inline-block bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-wide hover:bg-navy hover:-translate-y-0.5 hover:shadow-lg transition-all">
-              Learn More
+              {t('comp.about.learn')}
             </a>
           </div>
           <div 

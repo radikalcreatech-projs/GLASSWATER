@@ -42,11 +42,11 @@ export function Footer() {
           <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.connect')}</h4>
           <div className="flex flex-col gap-2 text-xs">
             <a href={settings.whatsapp} target="_blank" rel="noreferrer" className="text-[#25D366] font-semibold hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]">
-              <MessageCircle size={14} /> WhatsApp
+              <MessageCircle size={14} /> {t('social.whatsapp')}
             </a>
-            <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Facebook</a>
-            <a href={settings.instagram} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">Instagram</a>
-            <a href={settings.linkedin} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">LinkedIn</a>
+            <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('social.facebook')}</a>
+            <a href={settings.instagram} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('social.instagram')}</a>
+            <a href={settings.linkedin} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('social.linkedin')}</a>
           </div>
         </div>
       </div>

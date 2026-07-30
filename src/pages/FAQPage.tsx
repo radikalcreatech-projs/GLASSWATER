@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useI18n } from '../context/I18nContext';
-import { faqs } from '../data';
+import { getFaqs } from '../data';
 import { ChevronDown } from 'lucide-react';
 
 export function FAQPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -16,7 +16,7 @@ export function FAQPage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          {faqs.map((faq, idx) => (
+          {getFaqs(lang).map((faq, idx) => (
             <div key={idx} className="bg-bg-card border border-light-gray rounded-md overflow-hidden shadow-sm">
               <button 
                 className="w-full px-6 py-4 flex justify-between items-center text-left font-semibold text-navy hover:bg-light-gray/50 transition-colors"

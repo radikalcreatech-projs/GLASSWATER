@@ -28,7 +28,8 @@ export function PortalPage() {
   const handleDownloadPDF = async () => {
     if (!retrievedDoc) return;
     try {
-      const html2pdf = (await import('html2pdf.js')).default;
+      const html2pdfModule = await import('html2pdf.js');
+      const html2pdf = html2pdfModule.default || html2pdfModule;
       const element = document.getElementById('printable-document');
       const opt = {
         margin:       [10, 10, 10, 10],
@@ -114,14 +115,14 @@ export function PortalPage() {
         </div>
 
         {/* Corporate Letterhead & Document Card */}
-        <div id="printable-document" className="bg-white rounded-xl shadow-custom border border-gold/20 p-8 md:p-12 print:border-none print:shadow-none print:p-0">
+        <div id="printable-document" className="bg-white rounded-xl shadow-custom border border-gold/20 p-4 sm:p-6 md:p-12 print:border-none print:shadow-none print:p-0 text-sm">
           
           {/* Header Row */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-light-gray pb-8 mb-8 gap-6">
             <div className="flex items-center gap-4">
               <img src={settings.logoUrl} alt="Glasswater Logo" className="h-16 w-auto object-contain" />
               <div className="leading-none">
-                <div className="font-serif text-2xl font-bold text-navy tracking-tight">{settings.companyName ? settings.companyName.split(' ')[0] : 'GLASSWATER'}</div>
+                <div className="font-serif text-xl md:text-2xl font-bold text-navy tracking-tight">{settings.companyName ? settings.companyName.split(' ')[0] : 'GLASSWATER'}</div>
                 <div className="font-sans text-[9px] font-normal text-steel-blue tracking-widest mt-1 uppercase">{settings.companyName ? settings.companyName.substring(settings.companyName.indexOf(' ') + 1) : 'Fit-Outs & Co. Ltd.'}</div>
               </div>
             </div>
@@ -134,7 +135,7 @@ export function PortalPage() {
               }`}>
                 {retrievedDoc.type} {t('portal.statement')}
               </span>
-              <div className="text-2xl font-mono font-bold text-navy">{retrievedDoc.code}</div>
+              <div className="text-xl md:text-2xl font-mono font-bold text-navy break-all">{retrievedDoc.code}</div>
               <div className="text-xs text-text-secondary mt-1">{t('portal.date_issued')}: {retrievedDoc.date}</div>
               {retrievedDoc.dueDate && <div className="text-xs text-text-secondary">{t('portal.due_date')}: {retrievedDoc.dueDate}</div>}
             </div>

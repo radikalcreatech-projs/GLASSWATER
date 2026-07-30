@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useNavigation } from '../context/NavigationContext';
-import { posts as defaultPosts } from '../data';
+import { getPosts } from '../data';
 import { ArrowRight } from 'lucide-react';
 
 export function InsightsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { navigate } = useNavigation();
-  const [posts, setPosts] = useState(defaultPosts);
+  const [posts, setPosts] = useState(getPosts(lang));
 
   useEffect(() => {
     const saved = localStorage.getItem('glasswater_posts');
     if (saved) {
       try {
-        setPosts(JSON.parse(saved));
+        const parsed = JSON.parse(saved); setPosts([...parsed, ...getPosts(lang).filter(p => !parsed.find(op => op.slug === p.slug))]);
       } catch (e) {}
     }
-  }, []);
+  }, [lang]);
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">

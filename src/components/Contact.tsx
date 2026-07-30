@@ -1,3 +1,4 @@
+import { useSettings } from '../context/SettingsContext';
 import { useI18n } from '../context/I18nContext';
 import React from "react";
 import { useState } from 'react';
@@ -5,6 +6,7 @@ import { Phone, MessageCircle, Mail, MapPin, Facebook, Linkedin, Instagram, Yout
 
 export function Contact() {
   const { t } = useI18n();
+  const { settings } = useSettings();
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -25,42 +27,42 @@ export function Contact() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <input 
               type="text" 
-              placeholder="Full Name" 
+              placeholder={t('comp.contact.name')} 
               required 
               className="w-full px-4 py-3 border border-gray-200 rounded font-sans text-base focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all"
             />
             <input 
               type="email" 
-              placeholder="Email Address" 
+              placeholder={t('comp.contact.email')} 
               required 
               className="w-full px-4 py-3 border border-gray-200 rounded font-sans text-base focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all"
             />
             <input 
               type="tel" 
-              placeholder="Phone Number" 
+              placeholder={t('comp.contact.phone')} 
               required 
               className="w-full px-4 py-3 border border-gray-200 rounded font-sans text-base focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all"
             />
             <select 
               className="w-full px-4 py-3 border border-gray-200 rounded font-sans text-base focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all bg-white text-gray-500"
             >
-              <option value="">Service Interest</option>
-              <option>Engineering</option>
-              <option>Construction</option>
-              <option>Interior Fit‑Out</option>
-              <option>Finishing Works</option>
-              <option>Waterproofing</option>
-              <option>Swimming Pool Engineering</option>
-              <option>Facilities Management</option>
+              <option value="">{t('comp.contact.service')}</option>
+              <option>{t('comp.contact.opt1')}</option>
+              <option>{t('comp.contact.opt2')}</option>
+              <option>{t('comp.contact.opt3')}</option>
+              <option>{t('comp.contact.opt4')}</option>
+              <option>{t('comp.contact.opt5')}</option>
+              <option>{t('comp.contact.opt6')}</option>
+              <option>{t('comp.contact.opt7')}</option>
             </select>
             <textarea 
-              placeholder="Tell us about your project..." 
+              placeholder={t('comp.contact.msg')} 
               required
               rows={5}
               className="w-full px-4 py-3 border border-gray-200 rounded font-sans text-base focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all resize-y"
             ></textarea>
             <button type="submit" className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-wide hover:bg-navy transition-colors self-start mt-2">
-              Send Message
+              {t('comp.contact.btn')}
             </button>
             {submitted && <p className="text-green-600 font-medium mt-2">{t('comp.contact.success')}</p>}
           </form>
@@ -72,35 +74,33 @@ export function Contact() {
             <div className="space-y-4 mb-8">
               <div className="flex items-center gap-4">
                 <Phone className="text-gold w-6 h-6 shrink-0" />
-                <span className="text-charcoal">+233 30 123 4567</span>
+                <span className="text-charcoal">{settings.phone}</span>
               </div>
               <div className="flex items-center gap-4">
                 <MessageCircle className="text-gold w-6 h-6 shrink-0" />
-                <span className="text-charcoal">+233 50 123 4567</span>
+                <span className="text-charcoal">{settings.whatsapp}</span>
               </div>
               <div className="flex items-center gap-4">
                 <Mail className="text-gold w-6 h-6 shrink-0" />
-                <span className="text-charcoal">info@glasswater.com</span>
+                <span className="text-charcoal">{settings.email}</span>
               </div>
               <div className="flex items-center gap-4">
                 <MapPin className="text-gold w-6 h-6 shrink-0" />
-                <span className="text-charcoal">12 Independence Avenue, Accra, Ghana</span>
+                <span className="text-charcoal whitespace-pre-line">{settings.address}</span>
               </div>
             </div>
 
             <div className="flex gap-4">
-              <a href="#" className="w-11 h-11 bg-light-gray rounded-full flex items-center justify-center text-navy hover:bg-gold hover:text-white transition-all">
+              <a href={settings.facebook} target="_blank" rel="noreferrer" className="w-11 h-11 bg-light-gray rounded-full flex items-center justify-center text-navy hover:bg-gold hover:text-white transition-all">
                 <Facebook size={20} />
               </a>
-              <a href="#" className="w-11 h-11 bg-light-gray rounded-full flex items-center justify-center text-navy hover:bg-gold hover:text-white transition-all">
+              <a href={settings.linkedin} target="_blank" rel="noreferrer" className="w-11 h-11 bg-light-gray rounded-full flex items-center justify-center text-navy hover:bg-gold hover:text-white transition-all">
                 <Linkedin size={20} />
               </a>
-              <a href="#" className="w-11 h-11 bg-light-gray rounded-full flex items-center justify-center text-navy hover:bg-gold hover:text-white transition-all">
+              <a href={settings.instagram} target="_blank" rel="noreferrer" className="w-11 h-11 bg-light-gray rounded-full flex items-center justify-center text-navy hover:bg-gold hover:text-white transition-all">
                 <Instagram size={20} />
               </a>
-              <a href="#" className="w-11 h-11 bg-light-gray rounded-full flex items-center justify-center text-navy hover:bg-gold hover:text-white transition-all">
-                <Youtube size={20} />
-              </a>
+              
             </div>
           </div>
         </div>

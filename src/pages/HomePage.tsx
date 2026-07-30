@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useNavigation } from '../context/NavigationContext';
 import { CheckCircle2, Building2, Star, ShieldCheck, ArrowRight } from 'lucide-react';
-import { projects, posts, defaultReviews } from '../data';
+import { getProjects, getPosts, defaultReviews } from '../data';
 import { RainCanvas } from '../components/RainCanvas';
 
 export function HomePage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { navigate } = useNavigation();
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [localProjects, setLocalProjects] = useState(projects);
-  const [localPosts, setLocalPosts] = useState(posts);
+  const [reviews, setReviews] = useState<any[]>([lang]);
+  const [localProjects, setLocalProjects] = useState(getProjects(lang));
+  const [localPosts, setLocalPosts] = useState(getPosts(lang));
 
   useEffect(() => {
     const saved = localStorage.getItem('glasswater_reviews');
@@ -24,13 +24,13 @@ export function HomePage() {
     }
     try {
       const p = localStorage.getItem("glasswater_projects");
-      if (p) setLocalProjects(JSON.parse(p));
+      if (p) { const parsed = JSON.parse(p); setLocalProjects([...parsed.filter((p: any) => !getProjects(lang).find(dp => dp.id === p.id)), ...getProjects(lang)]); } else { setLocalProjects(getProjects(lang)); }
     } catch (e) {}
     try {
       const postsStr = localStorage.getItem("glasswater_posts");
-      if (postsStr) setLocalPosts(JSON.parse(postsStr));
+      if (postsStr) { const parsed = JSON.parse(postsStr); setLocalPosts([...parsed.filter((p: any) => !getPosts(lang).find(dp => dp.slug === p.slug)), ...getPosts(lang)]); } else { setLocalPosts(getPosts(lang)); }
     } catch (e) {}
-  }, []);
+  }, [lang]);
 
   return (
     <div className="bg-white">
