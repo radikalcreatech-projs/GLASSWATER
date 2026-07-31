@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSettings } from '../context/SettingsContext';
-import html2pdf from 'html2pdf.js';
 import { FileText, ArrowLeft, Printer, Download, Mail, MapPin, Phone, MessageCircle, ShieldCheck, Loader } from 'lucide-react';
 import { sanitizeWhatsAppUrl } from '../utils/url';
+
+// Lazy-load html2pdf only when needed (~600KB savings on initial load)
+let html2pdf: any = null;
+async function getHtml2pdf() {
+  if (!html2pdf) {
+    const module = await import('html2pdf.js');
+    html2pdf = module.default;
+  }
+  return html2pdf;
+}
 
 export function PortalPage() {
   const { t } = useI18n();
@@ -32,6 +41,7 @@ export function PortalPage() {
     if (!retrievedDoc || isDownloading) return;
     setIsDownloading(true);
     try {
+      const pdfLib = await getHtml2pdf();
       // Wait a frame to ensure the DOM is painted before capturing
       await new Promise(resolve => requestAnimationFrame(resolve));
       
@@ -48,7 +58,7 @@ export function PortalPage() {
         html2canvas:  { scale: 2, useCORS: true, windowWidth: 1024 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
       };
-      await html2pdf().set(opt).from(element).save();
+      await pdfLib().set(opt).from(element).save();
     } catch (e) {
       console.error('Error generating PDF', e);
       alert('Could not generate the document. Please check your connection and try again.');
