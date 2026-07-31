@@ -61,7 +61,7 @@ Note: Please email any photos, plans, or documents to ${settings.email || 'glass
 
     window.location.href = `mailto:${settings.email || 'glasswaterfits@gmail.com'}?subject=${subject}&body=${body}`;
 
-    alert('Thank you! Your request has been prepared in your email client. We will contact you shortly.');
+    alert('Your email application has opened with the pre-filled quote request. Please review and click Send in your email to complete the submission.');
     onClose();
     setStep(1);
     setFormData({ type: '', address: '', area: '', floors: '', age: '', scope: '', budget: '', startDate: '', urgency: '', name: '', email: '', phone: '', contactMethod: 'email', electrical: false, plumbing: false, carpentry: false, painting: false });

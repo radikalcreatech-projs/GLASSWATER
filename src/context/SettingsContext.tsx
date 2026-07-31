@@ -89,7 +89,7 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   instagram: 'https://instagram.com/glasswater',
   linkedin: 'https://linkedin.com/company/glasswater',
   paymentDetails: 'Bank: Example Bank\nAccount Name: Glasswater Fit-Outs\nAccount Number: 1234567890\nMomo: 0248284384',
-  adminPassword: '3c6cf93834239de14cb6e1c5188ea63fdf495fc5bffa604b1322b13f1fdce7a6', // SHA-256 of 'GWADMIN'
+  adminPassword: import.meta.env.VITE_ADMIN_PASSWORD_HASH || 'e6578e0c9bd51da7014c8d5d950c0410fa38e088fedb8b463191bbc6f13cbd39',
 };
 
 const DEFAULT_DOCUMENTS: ClientDocument[] = [

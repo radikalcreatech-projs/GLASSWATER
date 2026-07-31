@@ -15,7 +15,7 @@ export function PostPage() {
       try {
         const parsed = JSON.parse(saved);
         setPosts([...parsed.filter((p: any) => !posts.find(dp => dp.slug === p.slug)), ...getPosts(lang)]);
-      } catch (e) {}
+      } catch (e) { console.error('Failed to load glasswater_posts from localStorage:', e); }
     } else {
       setPosts(getPosts(lang));
     }

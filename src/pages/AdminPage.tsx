@@ -34,6 +34,7 @@ export function AdminPage() {
   const [editingDoc, setEditingDoc] = useState<ClientDocument | null>(null);
   const [searchDocQuery, setSearchDocQuery] = useState('');
   const [copyCodeSuccess, setCopyCodeSuccess] = useState<string | null>(null);
+  const [docSaveMessage, setDocSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalSettings({ ...settings });
@@ -166,6 +167,17 @@ export function AdminPage() {
     }
 
     setShowDocForm(false);
+    // Prepare auto-message for the admin to share with the client
+    const message = `Dear ${editingDoc.clientName},
+
+Your ${editingDoc.type.toLowerCase()} (#${editingDoc.code}) for "${editingDoc.title}" is ready.
+
+Please visit our client portal at [website link] and enter the code ${editingDoc.code} — ${editingDoc.code} to view and download your document.
+
+If you have any questions, please do not hesitate to contact us.
+
+— Glasswater Fit-Outs & Co. Ltd.`;
+    setDocSaveMessage(message);
     setEditingDoc(null);
   };
 
@@ -215,6 +227,28 @@ export function AdminPage() {
       setPosts(defaultPosts);
     }
   }, []);
+
+  // Session inactivity timeout (30 minutes)
+  const [lastActivity, setLastActivity] = useState(Date.now());
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const updateActivity = () => setLastActivity(Date.now());
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(e => window.addEventListener(e, updateActivity, { passive: true }));
+
+    const checkInterval = setInterval(() => {
+      if (Date.now() - lastActivity > 30 * 60 * 1000) {
+        setIsAuthenticated(false);
+        setLoginError('Your session ended due to inactivity. Please log in again.');
+      }
+    }, 10000);
+
+    return () => {
+      events.forEach(e => window.removeEventListener(e, updateActivity));
+      clearInterval(checkInterval);
+    };
+  }, [isAuthenticated, lastActivity]);
 
   // Brute-force lockout countdown timer
   useEffect(() => {
@@ -1063,6 +1097,38 @@ export function AdminPage() {
                       <Plus size={18} /> New Document
                     </button>
                   </div>
+
+                  {/* Saved document message box */}
+                  {docSaveMessage && (
+                    <div className="mb-6 p-5 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Check className="text-green-600" size={18} />
+                        <span className="font-semibold text-green-800 text-sm uppercase tracking-wider">Document Saved — Share This Message</span>
+                      </div>
+                      <div className="bg-white border border-green-100 rounded p-4 text-sm text-navy whitespace-pre-line font-sans leading-relaxed mb-3">
+                        {docSaveMessage}
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(docSaveMessage);
+                            alert('Message copied to clipboard.');
+                          }}
+                          className="bg-navy text-white px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider hover:bg-gold transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <Copy size={14} /> Copy Message
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDocSaveMessage(null)}
+                          className="border border-light-gray text-text-secondary px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider hover:bg-gray-100 transition-colors cursor-pointer"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Search Bar filter */}
                   <div className="mb-6">

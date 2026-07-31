@@ -69,18 +69,18 @@ export function HomePage() {
 
       {/* Trusted By / Statistics */}
       <section className="bg-navy border border-gold m-3 sm:m-4 lg:m-6 rounded-xl text-white py-5 md:py-10 text-center relative z-10 overflow-hidden">
-        <div className="max-w-6xl mx-auto px-2 md:px-4 flex overflow-x-auto snap-x snap-mandatory gap-6 pb-2 md:pb-0 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible no-scrollbar">
-          <div className="min-w-[60%] sm:min-w-[40%] md:min-w-0 snap-center flex flex-col items-center justify-center gap-1 md:gap-2">
+        <div className="max-w-6xl mx-auto px-2 md:px-4 grid grid-cols-3 gap-1 sm:gap-2 md:gap-8">
+          <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <CheckCircle2 className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">150+</span>
             <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.proj')}</span>
           </div>
-          <div className="min-w-[60%] sm:min-w-[40%] md:min-w-0 snap-center flex flex-col items-center justify-center gap-1 md:gap-2">
+          <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <Building2 className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">50+</span>
             <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.comm')}</span>
           </div>
-          <div className="min-w-[60%] sm:min-w-[40%] md:min-w-0 snap-center flex flex-col items-center justify-center gap-1 md:gap-2">
+          <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <Star className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">90%</span>
             <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.sat')}</span>
@@ -110,7 +110,7 @@ export function HomePage() {
       {/* Featured Projects - Large Images */}
       <section className="py-8 md:py-12 px-4 md:px-6 bg-light-gray border border-gold m-3 sm:m-4 lg:m-6 rounded-xl">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
             <div>
               <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">{t('home.feat_work')}</h2>
               <h3 className="font-serif text-3xl md:text-4xl font-bold text-navy">{t('home.prem_proj')}</h3>

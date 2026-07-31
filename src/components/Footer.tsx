@@ -10,14 +10,14 @@ export function Footer() {
 
   return (
     <footer className="bg-navy text-light-gray py-6 md:py-8 print:hidden">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mb-6 md:mb-8">
-        <div>
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 md:gap-8 mb-6 md:mb-8">
+        <div className="col-span-2 md:col-span-1">
           <h4 className="text-white font-serif font-bold text-xl mb-4 tracking-wide">GLASSWATER<span className="text-gold">.</span></h4>
           <p className="text-steel-blue text-[0.65rem] uppercase tracking-widest font-semibold mb-2">FIT-OUTS & CO. LTD.</p>
           <p className="text-light-gray/70 text-xs leading-relaxed max-w-xs">{t('footer.slogan')}</p>
         </div>
         
-        <div>
+        <div className="col-span-2 md:col-span-1">
           <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.contact')}</h4>
           <div className="space-y-3 text-light-gray/70 text-xs">
             <a href={`tel:${settings.phone}`} className="flex items-center gap-3 hover:text-gold transition-colors cursor-pointer"><Phone size={16} className="text-gold" /> {settings.phone}</a>
@@ -26,7 +26,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div>
+        <div className="col-span-1">
           <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.links')}</h4>
           <ul className="space-y-2 text-xs">
             <li><button onClick={() => navigate('home')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.home')}</button></li>
@@ -38,17 +38,25 @@ export function Footer() {
           </ul>
         </div>
         
-        <div>
+        <div className="col-span-1">
           <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.connect')}</h4>
-          <div className="flex flex-col gap-2 text-xs">
-            <a href={settings.whatsapp} target="_blank" rel="noreferrer" className="text-[#25D366] font-semibold hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]">
-              <MessageCircle size={14} /> {t('social.whatsapp')}
+          <div className="flex flex-wrap gap-4 mt-1">
+            <a href={settings.whatsapp} target="_blank" rel="noreferrer" aria-label={t('social.whatsapp')} className="text-[#25D366] hover:text-gold transition-colors hover:-translate-y-1">
+              <MessageCircle size={20} />
             </a>
-            <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]"><Facebook size={14} /> {t('social.facebook')}</a>
-            <a href={settings.instagram} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]"><Instagram size={14} /> {t('social.instagram')}</a>
-            <a href={settings.linkedin} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]"><Linkedin size={14} /> {t('social.linkedin')}</a>
+            <a href={settings.facebook} target="_blank" rel="noreferrer" aria-label={t('social.facebook')} className="text-light-gray/70 hover:text-gold transition-colors hover:-translate-y-1">
+              <Facebook size={20} />
+            </a>
+            <a href={settings.instagram} target="_blank" rel="noreferrer" aria-label={t('social.instagram')} className="text-light-gray/70 hover:text-gold transition-colors hover:-translate-y-1">
+              <Instagram size={20} />
+            </a>
+            <a href={settings.linkedin} target="_blank" rel="noreferrer" aria-label={t('social.linkedin')} className="text-light-gray/70 hover:text-gold transition-colors hover:-translate-y-1">
+              <Linkedin size={20} />
+            </a>
             {settings.tiktok && (
-              <a href={settings.tiktok} target="_blank" rel="noreferrer" className="text-light-gray/70 hover:text-gold transition-colors flex items-center gap-2 uppercase tracking-widest text-[0.65rem]"><Music2 size={14} /> {t('social.tiktok')}</a>
+              <a href={settings.tiktok} target="_blank" rel="noreferrer" aria-label={t('social.tiktok')} className="text-light-gray/70 hover:text-gold transition-colors hover:-translate-y-1">
+                <Music2 size={20} />
+              </a>
             )}
           </div>
         </div>

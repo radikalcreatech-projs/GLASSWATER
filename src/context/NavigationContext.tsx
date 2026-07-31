@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 
 export type Page = 'home' | 'about' | 'services' | 'projects' | 'insights' | 'faq' | 'reviews' | 'contact' | 'careers' | 'portal' | 'post' | 'admin';
 
@@ -10,27 +10,29 @@ interface NavigationContextType {
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
 
+const validPages: Page[] = ['home', 'about', 'services', 'projects', 'insights', 'faq', 'reviews', 'contact', 'careers', 'portal', 'post', 'admin'];
+
 export function NavigationProvider({ children }: { children: ReactNode }) {
-  const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [currentPage, setCurrentPage] = useState<Page>(() => {
+    const hash = window.location.hash.replace('#', '') as Page;
+    return validPages.includes(hash) ? hash : 'home';
+  });
   const [currentPostSlug, setCurrentPostSlug] = useState<string | null>(null);
 
+  // Listen for browser back/forward navigation
   useEffect(() => {
-    const handleHashChange = () => {
+    const onHashChange = () => {
       const hash = window.location.hash.replace('#', '') as Page;
-      const validPages: Page[] = ['home', 'about', 'services', 'projects', 'insights', 'faq', 'reviews', 'contact', 'careers', 'portal', 'post', 'admin'];
       if (validPages.includes(hash)) {
         setCurrentPage(hash);
+        if (hash !== 'post') setCurrentPostSlug(null);
       }
     };
-    
-    window.addEventListener('hashchange', handleHashChange);
-    // Initial check
-    handleHashChange();
-    
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  const navigate = (page: Page, data?: string) => {
+  const navigate = useCallback((page: Page, data?: string) => {
     setCurrentPage(page);
     if (data) {
       setCurrentPostSlug(data);
@@ -39,7 +41,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     }
     window.location.hash = page;
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
 
   return (
     <NavigationContext.Provider value={{ currentPage, currentPostSlug, navigate }}>

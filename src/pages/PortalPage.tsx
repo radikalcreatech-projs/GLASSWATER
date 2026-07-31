@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSettings } from '../context/SettingsContext';
 import html2pdf from 'html2pdf.js';
-import { FileText, ArrowLeft, Printer, Download, Mail, MapPin, Phone, MessageCircle, ShieldCheck } from 'lucide-react';
+import { FileText, ArrowLeft, Printer, Download, Mail, MapPin, Phone, MessageCircle, ShieldCheck, Loader } from 'lucide-react';
+import { sanitizeWhatsAppUrl } from '../utils/url';
 
 export function PortalPage() {
   const { t } = useI18n();
@@ -10,6 +11,7 @@ export function PortalPage() {
   const [refCode, setRefCode] = useState('');
   const [retrievedDoc, setRetrievedDoc] = useState<any | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     // Check for ?code= parameter in URL
@@ -27,10 +29,18 @@ export function PortalPage() {
   }, [documents, t]);
 
   const handleDownloadPDF = async () => {
-    if (!retrievedDoc) return;
+    if (!retrievedDoc || isDownloading) return;
+    setIsDownloading(true);
     try {
+      // Wait a frame to ensure the DOM is painted before capturing
+      await new Promise(resolve => requestAnimationFrame(resolve));
       
       const element = document.getElementById('printable-document');
+      if (!element) {
+        alert('Unable to prepare the document. Please try again.');
+        setIsDownloading(false);
+        return;
+      }
       const opt: any = {
         margin:       10,
         filename:     `${retrievedDoc.code}_${retrievedDoc.clientName}.pdf`,
@@ -38,10 +48,12 @@ export function PortalPage() {
         html2canvas:  { scale: 2, useCORS: true, windowWidth: 1024 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
       };
-      html2pdf().set(opt).from(element).save();
+      await html2pdf().set(opt).from(element).save();
     } catch (e) {
       console.error('Error generating PDF', e);
-      alert(t('portal.pdf_error'));
+      alert('Could not generate the document. Please check your connection and try again.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -90,10 +102,12 @@ export function PortalPage() {
           
           <div className="flex gap-3">
             <button 
-              onClick={handleDownloadPDF} 
-              className="bg-navy/5 border border-navy/20 hover:bg-navy/10 text-navy px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer relative z-10"
+              onClick={handleDownloadPDF}
+              disabled={isDownloading}
+              className="bg-navy/5 border border-navy/20 hover:bg-navy/10 text-navy px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer relative z-10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download size={14} /> {t('portal.download_pdf')}
+              {isDownloading ? <Loader size={14} className="animate-spin" /> : <Download size={14} />}
+              {isDownloading ? 'Preparing...' : t('portal.download_pdf')}
             </button>
             {retrievedDoc.fileUrl && (
               <a 
@@ -260,7 +274,7 @@ export function PortalPage() {
           <p className="text-sm text-text-secondary mb-4">{t('portal.get_in_touch')}</p>
           <div className="flex flex-wrap justify-center gap-4">
             <a 
-              href={settings.whatsapp} 
+              href={sanitizeWhatsAppUrl(settings.whatsapp)} 
               target="_blank" 
               rel="noreferrer" 
               className="bg-[#25D366] text-white px-6 py-2.5 rounded text-xs font-semibold uppercase tracking-widest hover:bg-[#128C7E] transition-all flex items-center gap-2 shadow-sm"
