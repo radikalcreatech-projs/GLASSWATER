@@ -26,7 +26,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="col-span-1">
+        <div className="hidden md:block col-span-1">
           <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.links')}</h4>
           <ul className="space-y-2 text-xs">
             <li><button onClick={() => navigate('home')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.home')}</button></li>
@@ -38,7 +38,7 @@ export function Footer() {
           </ul>
         </div>
         
-        <div className="col-span-1">
+        <div className="col-span-2 md:col-span-1">
           <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.connect')}</h4>
           <div className="flex flex-wrap gap-4 mt-1">
             <a href={settings.whatsapp} target="_blank" rel="noreferrer" aria-label={t('social.whatsapp')} className="text-[#25D366] hover:text-gold transition-colors hover:-translate-y-1">
