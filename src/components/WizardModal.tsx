@@ -59,9 +59,13 @@ Urgency: ${formData.urgency}
 Note: Please email any photos, plans, or documents to ${settings.email || 'glasswaterfits@gmail.com'} after submitting this request. Reference your name in the subject line.
 `);
 
-    window.location.href = `mailto:${settings.email || 'glasswaterfits@gmail.com'}?subject=${subject}&body=${body}`;
-
-    alert('Your email application has opened with the pre-filled quote request. Please review and click Send in your email to complete the submission.');
+    // Defer mailto: so the alert doesn't block the email client from opening
+    const mailtoUrl = `mailto:${settings.email || 'glasswaterfits@gmail.com'}?subject=${subject}&body=${body}`;
+    
+    alert('Your email application will now open with the pre-filled quote request. Please review and click Send in your email to complete the submission.');
+    setTimeout(() => {
+      window.location.href = mailtoUrl;
+    }, 50);
     onClose();
     setStep(1);
     setFormData({ type: '', address: '', area: '', floors: '', age: '', scope: '', budget: '', startDate: '', urgency: '', name: '', email: '', phone: '', contactMethod: 'email', electrical: false, plumbing: false, carpentry: false, painting: false });
