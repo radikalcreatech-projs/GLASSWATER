@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { X, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
+import { useSettings } from '../context/SettingsContext';
 
 export function WizardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [step, setStep] = useState(1);
   const { t } = useI18n();
+  const { settings } = useSettings();
   const [formData, setFormData] = useState({
-    type: '', address: '', area: '', floors: '', age: '', scope: '', budget: '', startDate: '', urgency: '', name: '', email: '', phone: '', contactMethod: 'email'
+    type: '', address: '', area: '', floors: '', age: '',
+    scope: '', budget: '', startDate: '', urgency: '',
+    name: '', email: '', phone: '', contactMethod: 'email',
+    electrical: false, plumbing: false, carpentry: false, painting: false,
   });
 
   if (!isOpen) return null;
@@ -20,6 +25,12 @@ export function WizardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
       return;
     }
 
+    const serviceChecks = [];
+    if (formData.electrical) serviceChecks.push('Electrical');
+    if (formData.plumbing) serviceChecks.push('Plumbing');
+    if (formData.carpentry) serviceChecks.push('Carpentry');
+    if (formData.painting) serviceChecks.push('Painting');
+
     const subject = encodeURIComponent(`New Project Quote Request from ${formData.name}`);
     const body = encodeURIComponent(`Name: ${formData.name}
 Email: ${formData.email}
@@ -29,6 +40,9 @@ Preferred Contact Method: ${formData.contactMethod}
 -- Project Details --
 Type: ${formData.type}
 Scope: ${formData.scope}
+
+-- Services Needed --
+${serviceChecks.length ? serviceChecks.join(', ') : 'Not specified'}
 
 -- Property Details --
 Address/Location: ${formData.address}
@@ -40,18 +54,25 @@ Building Age: ${formData.age}
 Estimated Budget: ${formData.budget}
 Target Start Date: ${formData.startDate}
 Urgency: ${formData.urgency}
+
+-- Files --
+Note: Please email any photos, plans, or documents to ${settings.email || 'glasswaterfits@gmail.com'} after submitting this request. Reference your name in the subject line.
 `);
 
-    window.location.href = `mailto:glasswaterfits@gmail.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${settings.email || 'glasswaterfits@gmail.com'}?subject=${subject}&body=${body}`;
 
     alert('Thank you! Your request has been prepared in your email client. We will contact you shortly.');
     onClose();
     setStep(1);
-    setFormData({ type: '', address: '', area: '', floors: '', age: '', scope: '', budget: '', startDate: '', urgency: '', name: '', email: '', phone: '', contactMethod: 'email' });
+    setFormData({ type: '', address: '', area: '', floors: '', age: '', scope: '', budget: '', startDate: '', urgency: '', name: '', email: '', phone: '', contactMethod: 'email', electrical: false, plumbing: false, carpentry: false, painting: false });
   };
 
   const updateForm = (key: string, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const toggleCheckbox = (key: string) => {
+    setFormData(prev => ({ ...prev, [key]: !(prev as any)[key] }));
   };
 
   const inputClass = "w-full p-3 border border-light-gray rounded font-sans text-base mb-4 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 bg-bg-body text-text-primary";
@@ -71,7 +92,7 @@ Urgency: ${formData.urgency}
               key={num} 
               className={`flex-1 text-center py-2 border-b-4 text-sm font-semibold whitespace-nowrap px-2 ${step === num ? 'border-gold text-navy' : 'border-light-gray text-text-secondary'}`}
             >
-              {num}. {['Type', 'Property', 'Scope', 'Budget', 'Uploads', 'Contact'][num-1]}
+              {num}. {['Type', 'Property', 'Scope', 'Budget', 'Files', 'Contact'][num-1]}
             </div>
           ))}
         </div>
@@ -122,10 +143,22 @@ Urgency: ${formData.urgency}
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step3')}</h3>
             <textarea className={`${inputClass} resize-y h-24`} placeholder={t('wizard.scope_desc')} value={formData.scope} onChange={e => updateForm('scope', e.target.value)}></textarea>
             <div className="flex gap-4 flex-wrap mb-4">
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> {t('wizard.electrical')}</label>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> {t('wizard.plumbing')}</label>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> {t('wizard.carpentry')}</label>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" /> {t('wizard.painting')}</label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" checked={formData.electrical} onChange={() => toggleCheckbox('electrical')} />
+                {t('wizard.electrical')}
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" checked={formData.plumbing} onChange={() => toggleCheckbox('plumbing')} />
+                {t('wizard.plumbing')}
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" checked={formData.carpentry} onChange={() => toggleCheckbox('carpentry')} />
+                {t('wizard.carpentry')}
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" checked={formData.painting} onChange={() => toggleCheckbox('painting')} />
+                {t('wizard.painting')}
+              </label>
             </div>
             <div className="flex justify-between mt-6">
               <button className="bg-light-gray text-navy px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-gray-300 transition-colors" onClick={handlePrev}>
@@ -168,12 +201,20 @@ Urgency: ${formData.urgency}
           </div>
         )}
 
-        {/* Step 5 */}
+        {/* Step 5 — Files (replaced with info message) */}
         {step === 5 && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step5')}</h3>
-            <input type="file" className={`${inputClass} !py-2`} multiple accept="image/*,.pdf,.dwg" />
-            <p className="text-sm text-text-secondary mb-4">{t('wizard.max_files')}</p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-4">
+              <p className="text-blue-800 text-sm leading-relaxed">
+                Please email any photos, floor plans, or project documents (PDFs, DWGs, images) to{' '}
+                <strong className="text-blue-900">{settings.email || 'glasswaterfits@gmail.com'}</strong>{' '}
+                after submitting this request. Reference your name in the subject line so we can match your files to your quote request.
+              </p>
+            </div>
+            <p className="text-sm text-text-secondary mt-2">
+              Accepted formats: images, PDFs, AutoCAD DWG files. Max 25MB total per email.
+            </p>
             <div className="flex justify-between mt-6">
               <button className="bg-light-gray text-navy px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-gray-300 transition-colors" onClick={handlePrev}>
                 <ArrowLeft size={16} /> Back

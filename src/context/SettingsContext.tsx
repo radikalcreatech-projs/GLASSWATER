@@ -45,6 +45,38 @@ export interface ClientDocument {
   includeTerms?: boolean;
 }
 
+// ── Crypto helpers ─────────────────────────────────────────────
+
+async function sha256(message: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Returns true when `candidate` looks like a SHA-256 hex digest (64 hex chars). */
+function isHashed(value: string | undefined): boolean {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/i.test(value);
+}
+
+export async function hashPassword(plain: string): Promise<string> {
+  return sha256(plain);
+}
+
+export async function verifyPassword(plain: string, storedHash: string): Promise<boolean> {
+  const candidate = await sha256(plain);
+  // Constant-time-ish: compare every char rather than short-circuiting
+  if (candidate.length !== storedHash.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < candidate.length; i++) {
+    mismatch |= candidate.charCodeAt(i) ^ storedHash.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
+// ── Defaults ───────────────────────────────────────────────────
+
 const DEFAULT_SETTINGS: WebsiteSettings = {
   companyName: "Glasswater Fit-Outs 0026 Co. Ltd.",
   logoUrl: 'https://lh3.googleusercontent.com/d/17P2w-kaeNW06Xb5OTU1UK-sRLSV4RUsy',
@@ -57,6 +89,7 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   instagram: 'https://instagram.com/glasswater',
   linkedin: 'https://linkedin.com/company/glasswater',
   paymentDetails: 'Bank: Example Bank\nAccount Name: Glasswater Fit-Outs\nAccount Number: 1234567890\nMomo: 0248284384',
+  adminPassword: '3c6cf93834239de14cb6e1c5188ea63fdf495fc5bffa604b1322b13f1fdce7a6', // SHA-256 of 'GWADMIN'
 };
 
 const DEFAULT_DOCUMENTS: ClientDocument[] = [
@@ -103,9 +136,20 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         let parsed = JSON.parse(savedSettings);
         if (parsed.contactImageUrl?.includes('1eOKbap3UVyhpSfsQyZoZXUd1LGjgLn72')) {
           parsed.contactImageUrl = 'https://lh3.googleusercontent.com/d/1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6c';
-          localStorage.setItem('glasswater_settings', JSON.stringify(parsed));
         }
-        setSettings(parsed);
+        // Migrate plain-text admin passwords to SHA-256 hashes on load
+        if (parsed.adminPassword && !isHashed(parsed.adminPassword)) {
+          sha256(parsed.adminPassword).then(hash => {
+            parsed.adminPassword = hash;
+            localStorage.setItem('glasswater_settings', JSON.stringify(parsed));
+            setSettings(parsed);
+          }).catch(e => {
+            console.error('Failed to hash admin password on migration:', e);
+            setSettings(parsed); // keep the plain-text password as-is
+          });
+        } else {
+          setSettings(parsed);
+        }
       } catch (e) {
         console.error('Error loading settings', e);
       }
@@ -125,8 +169,22 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateSettings = (newSettings: WebsiteSettings) => {
-    setSettings(newSettings);
-    localStorage.setItem('glasswater_settings', JSON.stringify(newSettings));
+    // Hash admin password if it's plain text
+    if (newSettings.adminPassword && !isHashed(newSettings.adminPassword)) {
+      sha256(newSettings.adminPassword).then(hash => {
+        const hashedSettings = { ...newSettings, adminPassword: hash };
+        setSettings(hashedSettings);
+        localStorage.setItem('glasswater_settings', JSON.stringify(hashedSettings));
+      }).catch(e => {
+        console.error('Failed to hash admin password on save:', e);
+        // Fall back to storing as-is if hashing fails
+        setSettings(newSettings);
+        localStorage.setItem('glasswater_settings', JSON.stringify(newSettings));
+      });
+    } else {
+      setSettings(newSettings);
+      localStorage.setItem('glasswater_settings', JSON.stringify(newSettings));
+    }
   };
 
   const addDocument = (doc: ClientDocument) => {

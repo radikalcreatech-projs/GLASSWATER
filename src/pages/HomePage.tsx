@@ -47,7 +47,7 @@ export function HomePage() {
             className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-navy leading-tight mb-4 md:mb-8"
             dangerouslySetInnerHTML={{ __html: t('home.hero.title') }}
           />
-          <p className="text-sm sm:text-base md:text-xl lg:text-2xl text-steel-blue mb-5 md:mb-12 font-light max-w-3xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base md:text-xl lg:text-2xl text-steel-blue mb-5 md:mb-12 font-light max-w-3xl mx-auto leading-relaxed line-clamp-3 md:line-clamp-none">
             {t('home.hero.sub')}
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3 md:gap-6">
@@ -69,18 +69,18 @@ export function HomePage() {
 
       {/* Trusted By / Statistics */}
       <section className="bg-navy border border-gold m-3 sm:m-4 lg:m-6 rounded-xl text-white py-5 md:py-10 text-center relative z-10 overflow-hidden">
-        <div className="max-w-6xl mx-auto px-2 md:px-4 grid grid-cols-3 gap-2 md:gap-8">
-          <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
+        <div className="max-w-6xl mx-auto px-2 md:px-4 flex overflow-x-auto snap-x snap-mandatory gap-6 pb-2 md:pb-0 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible no-scrollbar">
+          <div className="min-w-[60%] sm:min-w-[40%] md:min-w-0 snap-center flex flex-col items-center justify-center gap-1 md:gap-2">
             <CheckCircle2 className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">150+</span>
             <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.proj')}</span>
           </div>
-          <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
+          <div className="min-w-[60%] sm:min-w-[40%] md:min-w-0 snap-center flex flex-col items-center justify-center gap-1 md:gap-2">
             <Building2 className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">50+</span>
             <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.comm')}</span>
           </div>
-          <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
+          <div className="min-w-[60%] sm:min-w-[40%] md:min-w-0 snap-center flex flex-col items-center justify-center gap-1 md:gap-2">
             <Star className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">90%</span>
             <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.sat')}</span>
@@ -95,7 +95,7 @@ export function HomePage() {
           <h3 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-4 leading-tight">
             Building the Future with Precision
           </h3>
-          <p className="text-base md:text-lg text-steel-blue max-w-3xl mx-auto leading-relaxed mb-6">
+          <p className="text-base md:text-lg text-steel-blue max-w-3xl mx-auto leading-relaxed mb-6 line-clamp-4 md:line-clamp-none">
             {t('about.desc')}
           </p>
           <button 

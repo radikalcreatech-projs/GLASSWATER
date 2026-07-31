@@ -15,16 +15,16 @@ export function AboutPage() {
           <div className="text-center mb-8 md:mb-10">
             <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-4">{t('about.label')}</h2>
             <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-navy mb-4 leading-tight">{t('about.title')}</h1>
-            <p className="text-base sm:text-lg text-steel-blue max-w-4xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg text-steel-blue max-w-4xl mx-auto leading-relaxed line-clamp-4 md:line-clamp-none">
               {t('about.desc')}
             </p>
           </div>
 
           <div className="mb-8 md:mb-10">
             <h2 className="font-serif text-2xl md:text-3xl font-bold text-navy mb-6 text-center">{t('about.values')}</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-4 md:gap-6 md:overflow-visible no-scrollbar">
               {values.map(val => (
-                <div key={val} className="bg-white border border-light-gray p-4 md:p-6 rounded-lg text-center shadow-custom">
+                <div key={val} className="min-w-[60%] sm:min-w-[40%] md:min-w-0 snap-center bg-white border border-light-gray p-4 md:p-6 rounded-lg text-center shadow-custom">
                   <div className="font-serif font-bold text-sm md:text-lg text-navy">
                     {val}
                   </div>

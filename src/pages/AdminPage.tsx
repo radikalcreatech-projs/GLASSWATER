@@ -3,13 +3,17 @@ import { useState, useEffect } from 'react';
 import { useNavigation } from '../context/NavigationContext';
 import { Settings, LogOut, CheckCircle2, XCircle, Trash2, Edit, Star, Plus, FileText, Copy, Check, Info, Share2, Eye, PlusCircle, Trash, Globe, Download } from 'lucide-react';
 import { projects as defaultProjects, posts as defaultPosts } from '../data';
-import { useSettings, WebsiteSettings, ClientDocument, DocumentItem } from '../context/SettingsContext';
+import { useSettings, WebsiteSettings, ClientDocument, DocumentItem, verifyPassword } from '../context/SettingsContext';
 
 export function AdminPage() {
   const { navigate } = useNavigation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  
+  const [loginError, setLoginError] = useState('');
+  const [loginLocked, setLoginLocked] = useState(false);
+  const [lockCountdown, setLockCountdown] = useState(0);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+   
   const [activeTab, setActiveTab] = useState<'reviews' | 'projects' | 'insights' | 'settings' | 'documents'>('reviews');
   
   const [reviews, setReviews] = useState<any[]>([]);
@@ -111,7 +115,7 @@ export function AdminPage() {
   };
 
   const generateDocCode = () => {
-    const code = 'GW-' + Math.floor(1000 + Math.random() * 9000);
+    const code = 'GW-' + crypto.randomUUID().slice(0, 8).toUpperCase();
     if (editingDoc) {
       setEditingDoc({
         ...editingDoc,
@@ -120,32 +124,44 @@ export function AdminPage() {
     }
   };
 
+  // Validate document before saving
+  const validateDocument = (doc: ClientDocument): string | null => {
+    if (!doc.code.trim()) return 'Reference code is required.';
+    if (!doc.clientName.trim()) return 'Client name is required.';
+    if (!doc.title.trim()) return 'Document title is required.';
+    if (!doc.items.length) return 'At least one line item is required.';
+    for (const item of doc.items) {
+      if (!item.description.trim()) return 'Every line item must have a description.';
+      const qty = Number(item.quantity);
+      if (!Number.isFinite(qty) || qty < 1) return 'Quantity must be at least 1 for all items.';
+      const price = Number(item.unitPrice);
+      if (!Number.isFinite(price) || price < 0) return 'Unit price must be 0 or greater for all items.';
+    }
+    if (doc.discountType === 'percentage') {
+      const dv = Number(doc.discountValue);
+      if (!Number.isFinite(dv) || dv < 0 || dv > 100) return 'Percentage discount must be between 0 and 100.';
+    } else if (doc.discountType === 'fixed') {
+      const dv = Number(doc.discountValue);
+      if (!Number.isFinite(dv) || dv < 0) return 'Fixed discount must be 0 or greater.';
+    }
+    return null;
+  };
+
   const handleDocSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingDoc) return;
 
-    if (!editingDoc.code.trim()) {
-      alert('Please enter or generate a reference code.');
+    const validationError = validateDocument(editingDoc);
+    if (validationError) {
+      alert(validationError);
       return;
     }
 
-    // If it's a new document, check if code already exists
-    const isNew = !documents.some(d => d.code === editingDoc.code);
-    
-    // We are editing if we found the document in our original selection, but we must handle changing the code if we want
-    // But for simplicity, if showDocForm is editing and isNew is true, it means it's a completely new created code.
-    // If it is editing a code that existed, we update it.
-    const isEditingOriginal = documents.some(d => d.code === editingDoc.code);
-
-    if (isEditingOriginal) {
+    // If the code already exists in the documents array, update it; otherwise add it
+    const codeExists = documents.some(d => d.code === editingDoc.code);
+    if (codeExists) {
       updateDocument(editingDoc);
     } else {
-      // Check if code already exists for another document to prevent duplicate keys
-      const codeExists = documents.some(d => d.code === editingDoc.code);
-      if (codeExists) {
-        alert(`Document code ${editingDoc.code} already exists. Please choose a different code.`);
-        return;
-      }
       addDocument(editingDoc);
     }
 
@@ -154,12 +170,29 @@ export function AdminPage() {
   };
 
   useEffect(() => {
+    // Check for existing lockout
+    const lockoutData = localStorage.getItem('glasswater_admin_lockout');
+    if (lockoutData) {
+      try {
+        const lock = JSON.parse(lockoutData);
+        if (lock.lockUntil && Date.now() < lock.lockUntil) {
+          setLoginLocked(true);
+          setLockCountdown(Math.ceil((lock.lockUntil - Date.now()) / 1000));
+        } else {
+          // Lockout expired — clear it
+          localStorage.removeItem('glasswater_admin_lockout');
+        }
+      } catch (e) {
+        console.error('Error parsing lockout data', e);
+      }
+    }
+
     // Load reviews
     const savedReviews = localStorage.getItem('glasswater_reviews');
     if (savedReviews) {
       try {
         setReviews(JSON.parse(savedReviews));
-      } catch (e) {}
+      } catch (e) { console.error('Failed to load glasswater_reviews from localStorage:', e); }
     }
     
     // Load projects
@@ -167,7 +200,7 @@ export function AdminPage() {
     if (savedProjects) {
       try {
         setProjects(JSON.parse(savedProjects));
-      } catch (e) {}
+      } catch (e) { console.error('Failed to load glasswater_projects from localStorage:', e); }
     } else {
       setProjects(defaultProjects);
     }
@@ -177,18 +210,80 @@ export function AdminPage() {
     if (savedPosts) {
       try {
         setPosts(JSON.parse(savedPosts));
-      } catch (e) {}
+      } catch (e) { console.error('Failed to load glasswater_posts from localStorage:', e); }
     } else {
       setPosts(defaultPosts);
     }
   }, []);
-  
-  const handleLogin = (e: React.FormEvent) => {
+
+  // Brute-force lockout countdown timer
+  useEffect(() => {
+    if (!loginLocked || lockCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setLockCountdown(prev => {
+        if (prev <= 1) {
+          setLoginLocked(false);
+          localStorage.removeItem('glasswater_admin_lockout');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [loginLocked, lockCountdown]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === (settings.adminPassword || 'GWADMIN')) { // Simple mock auth
-      setIsAuthenticated(true);
+    setLoginError('');
+
+    if (loginLocked || isLoggingIn) return;
+
+    setIsLoggingIn(true);
+    try {
+
+    const storedHash = settings.adminPassword || 'GWADMIN';
+    // Try hash-based verification first, fall back to plain text for migration
+    let isValid = false;
+    if (/^[a-f0-9]{64}$/i.test(storedHash)) {
+      isValid = await verifyPassword(password, storedHash);
     } else {
-      alert('Invalid password (hint: admin123)');
+      // Legacy plain-text password (should be migrated by SettingsContext on next load)
+      isValid = password === storedHash;
+    }
+
+    if (isValid) {
+      setIsAuthenticated(true);
+      setLoginError('');
+      // Clear any lockout on successful login
+      localStorage.removeItem('glasswater_admin_lockout');
+      setIsLoggingIn(false);
+    } else {
+      setIsLoggingIn(false);
+      // Track failed attempt
+      const lockoutData = localStorage.getItem('glasswater_admin_lockout');
+      let attempts = 1;
+      if (lockoutData) {
+        try {
+          const lock = JSON.parse(lockoutData);
+          attempts = (lock.attempts || 0) + 1;
+        } catch (e) { console.error('Failed to parse lockout data:', e); }
+      }
+
+      if (attempts >= 5) {
+        // Lockout: 15 minutes
+        const lockUntil = Date.now() + 15 * 60 * 1000;
+        localStorage.setItem('glasswater_admin_lockout', JSON.stringify({ attempts, lockUntil }));
+        setLoginLocked(true);
+        setLockCountdown(900);
+        setLoginError('Too many failed attempts. Please wait 15 minutes.');
+      } else {
+        localStorage.setItem('glasswater_admin_lockout', JSON.stringify({ attempts }));
+        setLoginError('Invalid password. Please try again.');
+      }
+    }
+    } finally {
+      // Ensure we always reset if the try block exits via an unexpected path
+      if (isLoggingIn) setIsLoggingIn(false);
     }
   };
 
@@ -261,6 +356,11 @@ export function AdminPage() {
             <Settings className="text-gold w-12 h-12" />
           </div>
           <h1 className="font-serif text-2xl font-bold text-navy text-center mb-6">Admin Login</h1>
+          {loginError && (
+            <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded text-sm text-center font-medium">
+              {loginError}
+            </div>
+          )}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Password</label>
             <input 
@@ -269,10 +369,11 @@ export function AdminPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-light-gray border border-transparent focus:border-gold px-4 py-3 rounded outline-none transition-colors"
               placeholder="Enter Admin Password"
+              disabled={loginLocked || isLoggingIn}
             />
           </div>
-          <button type="submit" className="w-full bg-gold text-white font-semibold py-3 rounded uppercase tracking-widest hover:bg-navy transition-colors">
-            Login
+          <button type="submit" disabled={loginLocked || isLoggingIn} className="w-full bg-gold text-white font-semibold py-3 rounded uppercase tracking-widest hover:bg-navy transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {isLoggingIn ? 'Verifying...' : 'Login'}
           </button>
         </form>
       </div>
@@ -627,7 +728,7 @@ export function AdminPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Admin Login Password</label>
-                      <input type="text" value={localSettings.adminPassword || ''} onChange={e => setFormSettingsVal('adminPassword', e.target.value)} className={inputClass} placeholder="Leave empty for default (GWADMIN)" />
+                      <input type="password" value={localSettings.adminPassword || ''} onChange={e => setFormSettingsVal('adminPassword', e.target.value)} className={inputClass} placeholder="Enter new admin password" />
                     </div>
                   </div>
                 </div>
@@ -937,7 +1038,7 @@ export function AdminPage() {
                 <div>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                     <h2 className="font-serif text-2xl font-bold text-navy flex items-center gap-2">
-                      <FileText size={22} className="text-gold" /> Client Waybills &amp; Estimates ({documents.length})
+                      <FileText size={22} className="text-gold" /> Client Waybills & Estimates ({documents.length})
                     </h2>
                     <button 
                       type="button"

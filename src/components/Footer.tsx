@@ -9,8 +9,8 @@ export function Footer() {
   const { settings } = useSettings();
 
   return (
-    <footer className="bg-navy text-light-gray py-8 print:hidden">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-8">
+    <footer className="bg-navy text-light-gray py-6 md:py-8 print:hidden">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mb-6 md:mb-8">
         <div>
           <h4 className="text-white font-serif font-bold text-xl mb-4 tracking-wide">GLASSWATER<span className="text-gold">.</span></h4>
           <p className="text-steel-blue text-[0.65rem] uppercase tracking-widest font-semibold mb-2">FIT-OUTS & CO. LTD.</p>
@@ -54,7 +54,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-2 text-[0.65rem] text-light-gray/50 uppercase tracking-widest">
+      <div className="max-w-7xl mx-auto px-6 border-t border-white/10 pt-4 md:pt-6 flex flex-col md:flex-row justify-between items-center gap-2 text-[0.65rem] text-light-gray/50 uppercase tracking-widest">
         <div>&copy; 2026 Glasswater Fit‑Outs &amp; Co. Ltd.</div>
         <div>{t('footer.rights')}</div>
       </div>

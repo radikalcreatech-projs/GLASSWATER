@@ -12,6 +12,7 @@ import { I18nProvider, useI18n } from './context/I18nContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { MessageCircle, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { sanitizeWhatsAppUrl } from './utils/url';
 
 // Import Pages
 import { HomePage } from './pages/HomePage';
@@ -119,7 +120,7 @@ function MainApp() {
       </button>
 
       <a
-        href={settings.whatsapp}
+        href={sanitizeWhatsAppUrl(settings.whatsapp)}
         target="_blank"
         rel="noreferrer"
         className="fixed bottom-6 right-6 bg-[#25D366] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-custom hover:scale-110 hover:bg-[#128C7E] transition-all z-50 print:hidden"

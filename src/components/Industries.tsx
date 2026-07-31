@@ -18,9 +18,9 @@ export function Industries() {
           <h2 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-2">{t('comp.industries.title')}</h2>
           <p className="text-steel-blue text-lg">{t('comp.industries.sub')}</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 text-center">
+        <div className="flex overflow-x-auto snap-x snap-mandatory gap-5 pb-4 md:grid md:grid-cols-3 lg:grid-cols-4 md:gap-5 text-center md:overflow-visible no-scrollbar">
           {industries.map((industry) => (
-            <div key={industry} className="bg-light-gray py-6 px-4 rounded-lg font-semibold text-navy transition-all hover:bg-navy hover:text-white hover:scale-105 cursor-default">
+            <div key={industry} className="min-w-[50%] sm:min-w-[40%] md:min-w-0 snap-center bg-light-gray py-6 px-4 rounded-lg font-semibold text-navy transition-all hover:bg-navy hover:text-white hover:scale-105 cursor-default">
               {industry}
             </div>
           ))}

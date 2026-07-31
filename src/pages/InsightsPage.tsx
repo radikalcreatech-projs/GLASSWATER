@@ -3,6 +3,7 @@ import { useI18n } from '../context/I18nContext';
 import { useNavigation } from '../context/NavigationContext';
 import { getPosts } from '../data';
 import { ArrowRight } from 'lucide-react';
+import { safeCssUrl } from '../utils/safeCssUrl';
 
 export function InsightsPage() {
   const { t, lang } = useI18n();
@@ -14,7 +15,7 @@ export function InsightsPage() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved); setPosts([...parsed, ...getPosts(lang).filter(p => !parsed.find(op => op.slug === p.slug))]);
-      } catch (e) {}
+      } catch (e) { console.error('Failed to load glasswater_posts from localStorage:', e); }
     }
   }, [lang]);
 
@@ -38,7 +39,7 @@ export function InsightsPage() {
               <div className="relative aspect-square md:aspect-auto md:h-72 mb-4 overflow-hidden rounded-lg">
                 <div 
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                  style={{ backgroundImage: `url('${post.coverImage}')` }}
+                  style={{ backgroundImage: `url('${safeCssUrl(post.coverImage)}')` }}
                 />
                 <div className="absolute inset-0 bg-navy/20 group-hover:bg-transparent transition-colors duration-500" />
                 <div className="absolute top-4 left-4 bg-white px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-navy rounded shadow">

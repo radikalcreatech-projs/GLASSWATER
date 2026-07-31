@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { getProjects } from '../data';
 import { ArrowRight } from 'lucide-react';
+import { safeCssUrl } from '../utils/safeCssUrl';
 
 export function ProjectsPage() {
   const { t, lang } = useI18n();
@@ -12,7 +13,7 @@ export function ProjectsPage() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved); setProjects([...parsed, ...getProjects(lang).filter(p => !parsed.find(op => op.id === p.id))]);
-      } catch (e) {}
+      } catch (e) { console.error('Failed to load glasswater_projects from localStorage:', e); }
     }
   }, [lang]);
 
@@ -31,7 +32,7 @@ export function ProjectsPage() {
             <div key={p.id} className="bg-white rounded-lg overflow-hidden shadow-custom hover:-translate-y-2 transition-all cursor-pointer group">
               <div 
                 className="h-72 md:h-96 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                style={{ backgroundImage: `url('${p.image}')` }}
+                style={{ backgroundImage: `url('${safeCssUrl(p.image)}')` }}
               />
               <div className="p-10 relative bg-white z-10">
                 <div className="text-sm uppercase tracking-widest text-gold font-semibold mb-4 flex items-center gap-2">

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSettings } from '../context/SettingsContext';
 import { Phone, MessageCircle, Mail, MapPin, Facebook, Linkedin, Instagram } from 'lucide-react';
+import { sanitizeWhatsAppUrl, sanitizeSocialUrl } from '../utils/url';
 
 export function ContactPage() {
   const { t } = useI18n();
@@ -44,8 +45,8 @@ ${message}
     <div className="animate-in fade-in duration-500">
       <section className="py-8 md:py-12 px-6 border border-gold m-3 sm:m-4 lg:m-6 rounded-xl bg-white">
         <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-6 md:mb-10 max-w-3xl mx-auto">
-          <img src={settings.contactImageUrl} alt="Contact Icon" className="w-full max-w-xs md:max-w-sm lg:max-w-md mx-auto mb-6 md:mb-10 object-contain" />
+        <div className="text-center mb-4 md:mb-10 max-w-3xl mx-auto">
+          <img src={settings.contactImageUrl} alt="Contact Icon" className="w-full max-w-xs md:max-w-sm lg:max-w-md mx-auto mb-4 md:mb-10 object-contain" />
           <h2 className="uppercase tracking-[0.3em] text-gold text-sm font-semibold mb-4">{t('contact.get_in_touch')}</h2>
           <h1 className="font-serif text-5xl sm:text-6xl font-bold text-navy mb-6 md:mb-8">{t('contact.title')}</h1>
           <p className="text-xl text-text-secondary leading-relaxed">{t('contact.sub')}</p>
@@ -78,7 +79,7 @@ ${message}
             <h3 className="font-serif font-bold text-3xl text-navy mb-4">{t('contact.info')}</h3>
             <p className="text-steel-blue mb-6 md:mb-8 md:mb-12 text-lg leading-relaxed max-w-md">{t('contact.infop')}</p>
             
-            <div className="space-y-8 mb-6 md:mb-8">
+            <div className="space-y-4 md:space-y-8 mb-6 md:mb-8">
               <div className="flex items-center gap-6">
                 <div className="w-14 h-14 bg-light-gray rounded-full flex items-center justify-center shrink-0 text-gold"><Phone size={24} /></div>
                 <span className="text-text-primary text-xl font-medium">{settings.phone}</span>
@@ -89,7 +90,7 @@ ${message}
               </div>
               <div className="flex items-center gap-6">
                 <div className="w-14 h-14 bg-[#25D366]/10 rounded-full flex items-center justify-center shrink-0 text-[#25D366]"><MessageCircle size={24} /></div>
-                <a href={settings.whatsapp} target="_blank" rel="noreferrer" className="text-[#25D366] text-xl font-semibold hover:underline">{t('whatsapp.chat')}</a>
+                <a href={sanitizeWhatsAppUrl(settings.whatsapp)} target="_blank" rel="noreferrer" className="text-[#25D366] text-xl font-semibold hover:underline">{t('whatsapp.chat')}</a>
               </div>
               <div className="flex items-start gap-6">
                 <div className="w-14 h-14 bg-light-gray rounded-full flex items-center justify-center shrink-0 text-gold mt-1"><MapPin size={24} /></div>
@@ -98,15 +99,15 @@ ${message}
             </div>
 
             <div>
-              <h4 className="font-serif font-bold text-2xl text-navy mb-6">{t('contact.follow')}</h4>
+              <h4 className="font-serif font-bold text-2xl text-navy mb-4 md:mb-6">{t('contact.follow')}</h4>
               <div className="flex gap-4">
-                <a href={settings.facebook} target="_blank" rel="noreferrer" className="w-14 h-14 border border-light-gray rounded-full flex items-center justify-center text-navy hover:border-gold hover:bg-gold hover:text-white transition-all hover:-translate-y-1">
+                <a href={sanitizeSocialUrl(settings.facebook)} target="_blank" rel="noreferrer" className="w-14 h-14 border border-light-gray rounded-full flex items-center justify-center text-navy hover:border-gold hover:bg-gold hover:text-white transition-all hover:-translate-y-1">
                   <Facebook size={24} />
                 </a>
-                <a href={settings.instagram} target="_blank" rel="noreferrer" className="w-14 h-14 border border-light-gray rounded-full flex items-center justify-center text-navy hover:border-gold hover:bg-gold hover:text-white transition-all hover:-translate-y-1">
+                <a href={sanitizeSocialUrl(settings.instagram)} target="_blank" rel="noreferrer" className="w-14 h-14 border border-light-gray rounded-full flex items-center justify-center text-navy hover:border-gold hover:bg-gold hover:text-white transition-all hover:-translate-y-1">
                   <Instagram size={24} />
                 </a>
-                <a href={settings.linkedin} target="_blank" rel="noreferrer" className="w-14 h-14 border border-light-gray rounded-full flex items-center justify-center text-navy hover:border-gold hover:bg-gold hover:text-white transition-all hover:-translate-y-1">
+                <a href={sanitizeSocialUrl(settings.linkedin)} target="_blank" rel="noreferrer" className="w-14 h-14 border border-light-gray rounded-full flex items-center justify-center text-navy hover:border-gold hover:bg-gold hover:text-white transition-all hover:-translate-y-1">
                   <Linkedin size={24} />
                 </a>
               </div>

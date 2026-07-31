@@ -87,12 +87,12 @@ export function Services() {
           <p className="text-steel-blue text-lg">{t('comp.services.sub')}</p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-3 mb-10">
+        <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 mb-10 pb-4 md:pb-0 md:flex-wrap md:justify-center no-scrollbar">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-5 py-2.5 rounded-full font-semibold transition-colors font-sans text-sm md:text-base ${
+              className={`snap-center whitespace-nowrap shrink-0 px-5 py-2.5 rounded-full font-semibold transition-colors font-sans text-sm md:text-base ${
                 activeTab === tab.key
                   ? 'bg-navy text-white'
                   : 'bg-white/50 text-steel-blue hover:bg-steel-blue hover:text-white border border-transparent'
@@ -103,9 +103,9 @@ export function Services() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 md:overflow-visible no-scrollbar">
           {currentData.cards.map((card, idx) => (
-            <div key={idx} className="bg-white p-8 rounded-lg shadow-sm border-t-4 border-gold hover:-translate-y-1.5 hover:shadow-lg transition-all">
+            <div key={idx} className="min-w-[85%] sm:min-w-[70%] md:min-w-0 snap-center bg-white p-8 rounded-lg shadow-sm border-t-4 border-gold hover:-translate-y-1.5 hover:shadow-lg transition-all">
               <card.icon className="w-10 h-10 text-gold mb-4" />
               <h3 className="font-sans font-semibold text-xl text-navy mb-3">{card.title}</h3>
               <p className="text-steel-blue leading-relaxed">{card.desc}</p>
