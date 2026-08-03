@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 
-export type Page = 'home' | 'about' | 'services' | 'projects' | 'insights' | 'faq' | 'reviews' | 'contact' | 'careers' | 'portal' | 'post' | 'admin';
+export type Page = 'home' | 'about' | 'services' | 'projects' | 'insights' | 'faq' | 'reviews' | 'contact' | 'careers' | 'portal' | 'post' | 'project' | 'admin';
 
 interface NavigationContextType {
   currentPage: Page;
@@ -11,7 +11,7 @@ interface NavigationContextType {
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
 
-const validPages: Page[] = ['home', 'about', 'services', 'projects', 'insights', 'faq', 'reviews', 'contact', 'careers', 'portal', 'post', 'admin'];
+const validPages: Page[] = ['home', 'about', 'services', 'projects', 'insights', 'faq', 'reviews', 'contact', 'careers', 'portal', 'post', 'project', 'admin'];
 
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const [currentPage, setCurrentPage] = useState<Page>(() => {

@@ -333,11 +333,15 @@ If you have any questions, please do not hesitate to contact us.
   const handleProjectSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     let newProjects = [...projects];
+    const projectData = {
+      ...editingItem,
+      slug: editingItem.slug || editingItem.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    };
     if (editingItem?.id) {
       const idx = newProjects.findIndex(p => p.id === editingItem.id);
-      if (idx !== -1) newProjects[idx] = editingItem;
+      if (idx !== -1) newProjects[idx] = projectData;
     } else {
-      newProjects.unshift({ ...editingItem, id: Date.now() });
+      newProjects.unshift({ ...projectData, id: Date.now().toString() });
     }
     setProjects(newProjects);
     localStorage.setItem('glasswater_projects', JSON.stringify(newProjects));
@@ -503,7 +507,7 @@ If you have any questions, please do not hesitate to contact us.
                 <h2 className="font-serif text-2xl font-bold text-navy">{t('admin.projects_count')} ({projects.length})</h2>
                 <button
                   onClick={() => {
-                    setEditingItem({ title: '', category: '', desc: '', value: '', duration: '', image: 'https://lh3.googleusercontent.com/d/1yybAmLVE2csJ7mUpp1kqgYMA_Jsk4aeZ' });
+                    setEditingItem({ title: '', category: '', desc: '', value: '', duration: '', slug: '', content: '', image: 'https://lh3.googleusercontent.com/d/1yybAmLVE2csJ7mUpp1kqgYMA_Jsk4aeZ' });
                     setShowForm(true);
                   }}
                   className="bg-gold text-white px-4 py-2 rounded font-semibold uppercase tracking-widest text-sm hover:bg-navy transition-colors flex items-center gap-2 cursor-pointer"
@@ -564,11 +568,29 @@ If you have any questions, please do not hesitate to contact us.
                   </div>
                 </div>
 
+                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.slug')}</label>
+                <input
+                  type="text"
+                  value={editingItem.slug || ''}
+                  onChange={e => setEditingItem({...editingItem, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')})}
+                  className={inputClass}
+                  placeholder="auto-generated-from-title"
+                />
+
                 <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.image_url')}</label>
                 <input type="text" required value={editingItem.image} onChange={e => setEditingItem({...editingItem, image: e.target.value})} className={inputClass} />
                 {editingItem.image && (
                   <div className="mb-4 w-32 h-32 bg-cover bg-center rounded border border-light-gray" style={{backgroundImage: `url(${editingItem.image})`}} />
                 )}
+
+                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.content')}</label>
+                <textarea
+                  rows={10}
+                  value={editingItem.content || ''}
+                  onChange={e => setEditingItem({...editingItem, content: e.target.value})}
+                  className={`${inputClass} resize-y font-mono text-sm`}
+                  placeholder="<h3>Project Overview</h3><p>Write your case study content here using HTML. Use <h3> for section headers and <p> for paragraphs.</p>"
+                ></textarea>
 
                 <button type="submit" className="bg-navy text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer">
                   {t('admin.save_project')}

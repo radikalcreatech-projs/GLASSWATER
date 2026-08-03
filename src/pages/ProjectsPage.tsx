@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Key } from 'react';
 import { useI18n } from '../context/I18nContext';
+import { useNavigation } from '../context/NavigationContext';
 import { getProjects } from '../data';
 import { ArrowRight } from 'lucide-react';
 import { safeCssUrl } from '../utils/safeCssUrl';
@@ -12,6 +13,8 @@ function ProjectCard({ p }: { key?: Key; p: ProjectData }) {
   const ref = useRef<HTMLDivElement>(null);
   const [bgUrl, setBgUrl] = useState('');
   const { t } = useI18n();
+  const { navigate } = useNavigation();
+  const slug = (p as any).slug || p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
   useEffect(() => {
     const el = ref.current;
@@ -54,9 +57,12 @@ function ProjectCard({ p }: { key?: Key; p: ProjectData }) {
             <div className="font-bold text-navy">{p.duration ?? '—'}</div>
           </div>
         </div>
-        <div className="flex items-center text-gold font-semibold uppercase tracking-widest text-sm group-hover:translate-x-2 transition-transform">
+        <button
+          onClick={() => { window.location.hash = `#project?slug=${slug}`; }}
+          className="flex items-center text-gold font-semibold uppercase tracking-widest text-sm group-hover:translate-x-2 transition-transform cursor-pointer"
+        >
           View Case Study <ArrowRight size={16} className="ml-2" />
-        </div>
+        </button>
       </div>
     </div>
   );

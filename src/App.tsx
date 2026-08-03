@@ -28,7 +28,8 @@ const ReviewsPage  = lazy(() => import('./pages/ReviewsPage').then(m => ({ defau
 const ContactPage  = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })));
 const CareersPage  = lazy(() => import('./pages/CareersPage').then(m => ({ default: m.CareersPage })));
 const PortalPage   = lazy(() => import('./pages/PortalPage').then(m => ({ default: m.PortalPage })));
-const PostPage     = lazy(() => import('./pages/PostPage').then(m => ({ default: m.PostPage })));
+const PostPage            = lazy(() => import('./pages/PostPage').then(m => ({ default: m.PostPage })));
+const ProjectDetailPage   = lazy(() => import('./pages/ProjectDetailPage').then(m => ({ default: m.ProjectDetailPage })));
 const AdminPage    = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
 
 /** Minimal spinner shown while a lazy page chunk is loading */
@@ -55,6 +56,7 @@ function PageRenderer({ onOpenWizard }: { onOpenWizard: () => void }) {
           case 'contact':  return <ContactPage />;
           case 'portal':   return <PortalPage />;
           case 'post':     return <PostPage />;
+          case 'project':  return <ProjectDetailPage />;
           // Still routable even if not in the header
           case 'faq':      return <FAQPage />;
           case 'reviews':  return <ReviewsPage />;
