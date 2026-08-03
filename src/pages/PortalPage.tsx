@@ -1,25 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
-import { FileText, ArrowLeft, Printer, Download, Mail, MapPin, Phone, MessageCircle, Loader } from 'lucide-react';
+import { FileText, ArrowLeft, Printer, Download, Mail, MapPin, Phone, MessageCircle, ShieldCheck, Loader } from 'lucide-react';
 import { sanitizeWhatsAppUrl } from '../utils/url';
 
-// Lazy-load html2pdf only when needed (~600KB savings on initial load)
-let html2pdf: any = null;
-let html2pdfLoadPromise: Promise<any> | null = null;
+// Lazy-load html2canvas-pro and jspdf (~600KB savings on initial load)
+let html2canvasPro: any = null;
+let jsPDF: any = null;
+let loadPromise: Promise<void> | null = null;
 
-async function getHtml2pdf() {
-  if (!html2pdf) {
-    if (!html2pdfLoadPromise) {
-      html2pdfLoadPromise = import('html2pdf.js').then(module => {
-        html2pdf = module.default;
-        return html2pdf;
-      });
-    }
-    await html2pdfLoadPromise;
+async function loadPdfLibs() {
+  if (!loadPromise) {
+    loadPromise = (async () => {
+      const [canvasMod, pdfMod] = await Promise.all([
+        import('html2canvas-pro'),
+        import('jspdf'),
+      ]);
+      html2canvasPro = canvasMod.default;
+      jsPDF = pdfMod.default;
+    })();
   }
-  return html2pdf;
+  await loadPromise;
 }
 
 /** Extracts ?code= param from hash-based URL reliably */
@@ -49,8 +51,7 @@ export function PortalPage() {
       const foundDoc = documents.find(doc => doc.code.toUpperCase() === codeParam.toUpperCase());
       if (foundDoc) {
         setRetrievedDoc(foundDoc);
-        // Pre-warm html2pdf import in background
-        getHtml2pdf().catch(() => {});
+        loadPdfLibs().catch(() => {});
       } else {
         setErrorMsg(`${t('portal.doc_error')} "${codeParam}".`);
       }
@@ -63,7 +64,7 @@ export function PortalPage() {
     const loadingToastId = addToast('info', t('loading.generating_pdf'), 0);
 
     try {
-      const pdfLib = await getHtml2pdf();
+      await loadPdfLibs();
 
       // Retry DOM readiness up to 3 times with 150ms intervals
       let element: HTMLElement | null = null;
@@ -80,30 +81,35 @@ export function PortalPage() {
         return;
       }
 
-      // Clone the element so we can strip unsupported CSS before rendering
-      const clone = element.cloneNode(true) as HTMLElement;
-      // Strip Tailwind v4 OKLab/OKLCH color functions that html2canvas can't parse
-      clone.querySelectorAll('*').forEach((el: any) => {
-        if (el.style) {
-          for (let i = el.style.length - 1; i >= 0; i--) {
-            const prop = el.style[i];
-            const val = el.style.getPropertyValue(prop);
-            if (typeof val === 'string' && (val.includes('oklab(') || val.includes('oklch('))) {
-              el.style.removeProperty(prop);
-            }
-          }
-        }
+      // Use html2canvas-pro which supports oklch/oklab CSS color functions
+      const canvas = await html2canvasPro(element, {
+        scale: 2,
+        useCORS: true,
+        windowWidth: 1024,
       });
 
-      const opt: any = {
-        margin:       10,
-        filename:     `${retrievedDoc.code}_${retrievedDoc.clientName}.pdf`,
-        image:        { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, windowWidth: 1024 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
-      };
+      // Create PDF with jsPDF
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF('portrait', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const imgWidth = pdfWidth - 20; // 10mm margin each side
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      await pdfLib().set(opt).from(clone).save();
+      let heightLeft = imgHeight;
+      let position = 10; // top margin
+
+      pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+      heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+
+      // Handle multi-page content
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+        heightLeft -= (pdf.internal.pageSize.getHeight() - 20);
+      }
+
+      pdf.save(`${retrievedDoc.code}_${retrievedDoc.clientName}.pdf`);
 
       removeToast(loadingToastId);
       addToast('success', t('toast.pdf_ready'), 4000);
@@ -130,8 +136,7 @@ export function PortalPage() {
 
     if (foundDoc) {
       setRetrievedDoc(foundDoc);
-      // Pre-warm html2pdf import
-      getHtml2pdf().catch(() => {});
+      loadPdfLibs().catch(() => {});
     } else {
       setErrorMsg(`${t('portal.doc_error')} "${cleanedCode}". ${t('portal.doc_error_verify')}`);
     }
@@ -145,18 +150,17 @@ export function PortalPage() {
 
   const handlePrint = () => {
     addToast('info', t('toast.print_opening'), 2000);
-    // Small delay to let the toast render before print dialog
     setTimeout(() => {
       window.print();
     }, 300);
   };
 
-  // If a document was retrieved, render the gorgeous corporate Waybill/Estimate/Invoice receipt
+  // If a document was retrieved, render the receipt
   if (retrievedDoc) {
     return (
       <div className="animate-in fade-in duration-300 py-6 md:py-10 px-4 sm:px-6 max-w-4xl mx-auto print:py-0 print:px-0 relative">
         {isDownloading && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-xl">
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-xl pointer-events-none">
             <div className="flex flex-col items-center gap-4">
               <Loader className="animate-spin text-gold w-10 h-10" />
               <p className="text-sm text-text-secondary font-medium">{t('loading.generating_pdf')}</p>
@@ -164,7 +168,6 @@ export function PortalPage() {
           </div>
         )}
 
-        {/* Back and Print buttons - Hidden when printing */}
         <div className="flex flex-wrap justify-between items-center mb-6 gap-4 print:hidden">
           <button
             onClick={handleBackToSearch}
@@ -201,10 +204,8 @@ export function PortalPage() {
           </div>
         </div>
 
-        {/* Corporate Letterhead & Document Card */}
         <div id="printable-document" className="bg-white rounded-xl shadow-custom border border-gold/20 p-4 sm:p-6 md:p-12 print:border-none print:shadow-none print:p-0 text-sm">
 
-          {/* Header Row */}
           <div className="flex flex-col sm:flex-row print:flex-row justify-between items-start sm:items-center print:items-center border-b border-light-gray pb-8 mb-8 gap-6">
             <div className="flex items-center gap-4">
               <img src={settings.logoUrl} alt="Glasswater Logo" className="h-16 w-auto object-contain" />
@@ -228,7 +229,6 @@ export function PortalPage() {
             </div>
           </div>
 
-          {/* Parties Block */}
           <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-8 mb-8">
             <div>
               <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest mb-3 border-b border-light-gray pb-1">{t('portal.issued_by')}</h4>
@@ -245,24 +245,26 @@ export function PortalPage() {
               <div className="text-sm text-text-secondary space-y-1 mt-2">
                 {retrievedDoc.clientEmail && <p className="flex items-center gap-2"><Mail size={14} className="text-gold shrink-0" /> <span>{retrievedDoc.clientEmail}</span></p>}
                 {retrievedDoc.clientPhone && <p className="flex items-center gap-2"><Phone size={14} className="text-gold shrink-0" /> <span>{retrievedDoc.clientPhone}</span></p>}
-
+                <div className="flex items-start gap-2 mt-3 bg-light-gray/40 p-2.5 rounded border border-light-gray/60">
+                  <ShieldCheck size={16} className="text-green-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-xs font-semibold uppercase text-navy block">{t('portal.system_status')}</span>
+                    <span className="text-xs font-medium text-green-700 uppercase tracking-wider">{retrievedDoc.status}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Project Title Banner */}
           <div className="bg-navy text-white p-4 rounded-lg mb-8">
             <span className="text-[9px] font-semibold text-gold uppercase tracking-widest block mb-1">{t('portal.subject_matter')}</span>
             <h3 className="font-serif text-lg font-bold">{retrievedDoc.title}</h3>
           </div>
 
-          {/* Line Items Table */}
           <div className="mb-8">
             <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest mb-4 border-b border-light-gray pb-1">{t('portal.statement_accounts')}</h4>
             {retrievedDoc.items.length === 0 ? (
-              <div className="text-center py-6 bg-light-gray/30 rounded text-text-secondary text-sm">
-                {t('portal.no_items')}
-              </div>
+              <div className="text-center py-6 bg-light-gray/30 rounded text-text-secondary text-sm">{t('portal.no_items')}</div>
             ) : (
               <div className="overflow-x-auto print:overflow-visible">
                 <table className="w-full text-left border-collapse">
@@ -287,14 +289,10 @@ export function PortalPage() {
                   <tfoot>
                     {retrievedDoc.discountType && (
                       <tr className="text-sm font-semibold text-text-secondary border-t border-light-gray bg-white">
-                        <td colSpan={3} className="p-3 text-right">
-                          {t('portal.discount')} ({retrievedDoc.discountType === 'percentage' ? `${retrievedDoc.discountValue}%` : 'Fixed'})
-                        </td>
+                        <td colSpan={3} className="p-3 text-right">{t('portal.discount')} ({retrievedDoc.discountType === 'percentage' ? `${retrievedDoc.discountValue}%` : 'Fixed'})</td>
                         <td className="p-3 text-right text-red-500">
-                          - GHS {retrievedDoc.discountType === 'fixed'
-                            ? Number(retrievedDoc.discountValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                            : (retrievedDoc.items.reduce((sum: number, item: any) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0) * Number(retrievedDoc.discountValue) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                          }
+                          - GHS {retrievedDoc.discountType === 'fixed' ? Number(retrievedDoc.discountValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : (retrievedDoc.items.reduce((sum: number, item: any) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0) * Number(retrievedDoc.discountValue) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                       </tr>
                     )}
@@ -310,17 +308,13 @@ export function PortalPage() {
             )}
           </div>
 
-          {/* Payment Details Block */}
           {retrievedDoc.includePaymentDetails && settings.paymentDetails && (
             <div className="bg-navy/5 p-6 rounded-lg border border-navy/10 mb-8">
-              <h4 className="text-[10px] font-bold text-navy uppercase tracking-widest mb-2 flex items-center gap-2">
-                 {t('portal.payment_info')}
-              </h4>
+              <h4 className="text-[10px] font-bold text-navy uppercase tracking-widest mb-2 flex items-center gap-2">{t('portal.payment_info')}</h4>
               <p className="text-sm text-navy/80 font-mono leading-relaxed whitespace-pre-line">{settings.paymentDetails}</p>
             </div>
           )}
 
-          {/* Notes Block */}
           {retrievedDoc.notes && (
             <div className="bg-light-gray/20 p-6 rounded-lg border border-light-gray mb-8">
               <h4 className="text-[10px] font-bold text-navy uppercase tracking-widest mb-2">{t('portal.terms')}</h4>
@@ -328,30 +322,20 @@ export function PortalPage() {
             </div>
           )}
 
-          {/* Footer Notice */}
           <div className="border-t border-light-gray pt-6 text-center text-[10px] text-text-secondary uppercase tracking-widest">
             {t('portal.thank_you')}
           </div>
 
         </div>
 
-        {/* Client Support Help Section - Hidden when printing */}
         <div className="mt-8 text-center bg-light-gray/40 border border-light-gray rounded-xl p-6 print:hidden">
           <h3 className="font-serif text-lg font-bold text-navy mb-2">{t('portal.questions')}</h3>
           <p className="text-sm text-text-secondary mb-4">{t('portal.get_in_touch')}</p>
           <div className="flex flex-wrap justify-center gap-4">
-            <a
-              href={sanitizeWhatsAppUrl(settings.whatsapp)}
-              target="_blank"
-              rel="noreferrer"
-              className="bg-[#25D366] text-white px-6 py-2.5 rounded text-xs font-semibold uppercase tracking-widest hover:bg-[#128C7E] transition-all flex items-center gap-2 shadow-sm"
-            >
+            <a href={sanitizeWhatsAppUrl(settings.whatsapp)} target="_blank" rel="noreferrer" className="bg-[#25D366] text-white px-6 py-2.5 rounded text-xs font-semibold uppercase tracking-widest hover:bg-[#128C7E] transition-all flex items-center gap-2 shadow-sm">
               <MessageCircle size={16} /> {t('whatsapp.chat')}
             </a>
-            <a
-              href={`mailto:${settings.email}?subject=Inquiry on document ${retrievedDoc.code}`}
-              className="bg-navy text-white px-6 py-2.5 rounded text-xs font-semibold uppercase tracking-widest hover:bg-gold transition-all flex items-center gap-2 shadow-sm"
-            >
+            <a href={`mailto:${settings.email}?subject=Inquiry on document ${retrievedDoc.code}`} className="bg-navy text-white px-6 py-2.5 rounded text-xs font-semibold uppercase tracking-widest hover:bg-gold transition-all flex items-center gap-2 shadow-sm">
               <Mail size={16} /> {t('portal.email_office')}
             </a>
           </div>
@@ -361,7 +345,6 @@ export function PortalPage() {
     );
   }
 
-  // Otherwise, render the gorgeous search panel
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
       <section className="py-12 md:py-24 px-6 max-w-7xl mx-auto">
@@ -375,23 +358,12 @@ export function PortalPage() {
           <p className="text-base text-light-gray mb-8">{t('portal.enter')}</p>
 
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto">
-            <input
-              type="text"
-              required
-              placeholder={t('admin.placeholder') + ' ' + t('admin.code')}
-              value={refCode}
-              onChange={e => setRefCode(e.target.value)}
-              className="w-full sm:flex-1 p-4 border-none rounded font-sans text-base focus:outline-none focus:ring-2 focus:ring-gold bg-white text-text-primary uppercase"
-            />
-            <button type="submit" className="bg-gold text-white px-8 py-4 rounded font-semibold uppercase tracking-widest hover:bg-white hover:text-navy transition-colors w-full sm:w-auto shrink-0 shadow-custom cursor-pointer">
-              {t('portal.loginbtn')}
-            </button>
+            <input type="text" required placeholder={t('admin.placeholder') + ' ' + t('admin.code')} value={refCode} onChange={e => setRefCode(e.target.value)} className="w-full sm:flex-1 p-4 border-none rounded font-sans text-base focus:outline-none focus:ring-2 focus:ring-gold bg-white text-text-primary uppercase" />
+            <button type="submit" className="bg-gold text-white px-8 py-4 rounded font-semibold uppercase tracking-widest hover:bg-white hover:text-navy transition-colors w-full sm:w-auto shrink-0 shadow-custom cursor-pointer">{t('portal.loginbtn')}</button>
           </form>
 
           {errorMsg && (
-            <p className="mt-4 text-red-400 text-sm font-medium bg-red-500/10 p-3 rounded border border-red-500/20 max-w-lg mx-auto">
-              {errorMsg}
-            </p>
+            <p className="mt-4 text-red-400 text-sm font-medium bg-red-500/10 p-3 rounded border border-red-500/20 max-w-lg mx-auto">{errorMsg}</p>
           )}
 
           <p className="mt-8 text-concrete-gray text-xs tracking-wider uppercase">
