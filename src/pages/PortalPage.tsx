@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
-import { FileText, ArrowLeft, Printer, Download, Mail, MapPin, Phone, MessageCircle, ShieldCheck, Loader } from 'lucide-react';
+import { FileText, ArrowLeft, Printer, Download, Mail, MapPin, Phone, MessageCircle, Loader } from 'lucide-react';
 import { sanitizeWhatsAppUrl } from '../utils/url';
 
 // Lazy-load html2pdf only when needed (~600KB savings on initial load)
@@ -245,13 +245,7 @@ export function PortalPage() {
               <div className="text-sm text-text-secondary space-y-1 mt-2">
                 {retrievedDoc.clientEmail && <p className="flex items-center gap-2"><Mail size={14} className="text-gold shrink-0" /> <span>{retrievedDoc.clientEmail}</span></p>}
                 {retrievedDoc.clientPhone && <p className="flex items-center gap-2"><Phone size={14} className="text-gold shrink-0" /> <span>{retrievedDoc.clientPhone}</span></p>}
-                <div className="flex items-start gap-2 mt-3 bg-light-gray/40 p-2.5 rounded border border-light-gray/60">
-                  <ShieldCheck size={16} className="text-green-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-xs font-semibold uppercase text-navy block">{t('portal.system_status')}</span>
-                    <span className="text-xs font-medium text-green-700 uppercase tracking-wider">{retrievedDoc.status}</span>
-                  </div>
-                </div>
+
               </div>
             </div>
           </div>
