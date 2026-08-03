@@ -276,7 +276,7 @@ If you have any questions, please do not hesitate to contact us.
 
     setIsLoggingIn(true);
     try {
-      const result = await authLogin(password);
+      const result = await authLogin(password, settings.adminPassword);
 
       if (result.success) {
         setIsAuthenticated(true);

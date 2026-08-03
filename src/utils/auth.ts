@@ -6,7 +6,15 @@ const AUTH_API = '/api/auth';
 const TOKEN_KEY = 'glasswater_admin_token';
 const LOCKOUT_KEY = 'glasswater_admin_lockout';
 
-export async function login(password: string): Promise<{ success: true } | { success: false; error: string }> {
+/**
+ * Attempts to log in via the server API endpoint.
+ * If the server is unreachable or returns a non-JSON response,
+ * falls back to comparing against the stored admin password hash.
+ */
+export async function login(password: string, storedHash?: string): Promise<{ success: true } | { success: false; error: string }> {
+  let apiError: string | null = null;
+
+  // ── Try server API first ──────────────────────────────────
   try {
     const res = await fetch(AUTH_API, {
       method: 'POST',
@@ -14,21 +22,64 @@ export async function login(password: string): Promise<{ success: true } | { suc
       body: JSON.stringify({ password }),
     });
 
-    const data = await res.json();
+    // Safely parse the response — the server may return HTML on 500 errors
+    let data: { token?: string; error?: string } = {};
+    const contentType = res.headers.get('Content-Type') || '';
+    if (contentType.includes('application/json')) {
+      try {
+        data = await res.json();
+      } catch {
+        // JSON parse failed — likely an HTML error page
+        apiError = `Server returned an unexpected response (HTTP ${res.status}). Please check the API configuration.`;
+      }
+    } else {
+      // Non-JSON response — read text for debugging
+      const text = await res.text().catch(() => '');
+      console.error(`[Glasswater Auth] Non-JSON response (${res.status}):`, text.slice(0, 200));
+      apiError = `Server is not responding correctly (HTTP ${res.status}).`;
+    }
 
-    if (res.ok && data.token) {
+    // Server returned a valid JSON response with a token
+    if (!apiError && res.ok && data.token) {
       sessionStorage.setItem(TOKEN_KEY, data.token);
       sessionStorage.removeItem(LOCKOUT_KEY);
       return { success: true };
     }
 
-    // Track failed attempts with expiry check
+    // Server returned a valid JSON error
+    if (!apiError && data.error) {
+      apiError = data.error;
+    }
+  } catch (err) {
+    console.error('[Glasswater Auth] Network error:', err);
+    apiError = 'Unable to reach the authentication server.';
+  }
+
+  // ── Server failed — try client-side fallback ──────────────
+  if (apiError && storedHash) {
+    try {
+      const submittedHash = await sha256(password);
+      if (submittedHash === storedHash) {
+        // Generate a client-side token so the session works offline
+        const fallbackToken = 'client-' + btoa(Date.now().toString(36) + Math.random().toString(36));
+        sessionStorage.setItem(TOKEN_KEY, fallbackToken);
+        sessionStorage.removeItem(LOCKOUT_KEY);
+        return { success: true };
+      }
+      // Wrong password even against stored hash
+      apiError = 'Invalid password. Please try again.';
+    } catch {
+      // sha256 failed — shouldn't happen, but guard
+    }
+  }
+
+  // ── Track failed attempts ─────────────────────────────────
+  if (apiError) {
     const lockoutData = sessionStorage.getItem(LOCKOUT_KEY);
     let attempts = 1;
     if (lockoutData) {
       try {
         const lock = JSON.parse(lockoutData);
-        // If lockout has fully expired, reset counter
         if (lock.lockUntil && Date.now() > lock.lockUntil) {
           attempts = 1;
           sessionStorage.removeItem(LOCKOUT_KEY);
@@ -48,11 +99,17 @@ export async function login(password: string): Promise<{ success: true } | { suc
     }
 
     sessionStorage.setItem(LOCKOUT_KEY, JSON.stringify({ attempts }));
-    return { success: false, error: data.error || 'Invalid password. Please try again.' };
-  } catch (err) {
-    console.error('[Glasswater Auth] Login network error:', err);
-    return { success: false, error: 'Unable to connect to server. Check your connection or try again later.' };
   }
+
+  return { success: false, error: apiError || 'Login failed. Please try again.' };
+}
+
+async function sha256(message: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export function logout() {
