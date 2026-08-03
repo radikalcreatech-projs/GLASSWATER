@@ -1,8 +1,8 @@
 import React from "react";
 import { useState, useEffect } from 'react';
 import { useNavigation } from '../context/NavigationContext';
-import { Settings, LogOut, CheckCircle2, XCircle, Trash2, Edit, Star, Plus, FileText, Copy, Check, Info, Share2, Eye, PlusCircle, Trash, Globe, Download, Loader } from 'lucide-react';
-import { projects as defaultProjects, posts as defaultPosts } from '../data';
+import { Settings, LogOut, CheckCircle2, XCircle, Trash2, Edit, Star, Plus, FileText, Copy, Check, Info, Share2, Eye, PlusCircle, Trash, Globe, Download, Loader, EyeOff } from 'lucide-react';
+import { projects as defaultProjects, posts as defaultPosts, defaultReviews } from '../data';
 import { useSettings, WebsiteSettings, ClientDocument, DocumentItem } from '../context/SettingsContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
@@ -18,6 +18,8 @@ export function AdminPage() {
   const [loginLocked, setLoginLocked] = useState(() => isLockedOut().locked);
   const [lockCountdown, setLockCountdown] = useState(() => isLockedOut().remainingSeconds);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSettingsPassword, setShowSettingsPassword] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'reviews' | 'projects' | 'insights' | 'settings' | 'documents'>('reviews');
 
@@ -212,6 +214,9 @@ If you have any questions, please do not hesitate to contact us.
     const savedReviews = localStorage.getItem('glasswater_reviews');
     if (savedReviews) {
       try { setReviews(JSON.parse(savedReviews)); } catch (e) { console.error('Failed to load glasswater_reviews:', e); }
+    } else {
+      setReviews(defaultReviews);
+      localStorage.setItem('glasswater_reviews', JSON.stringify(defaultReviews));
     }
 
     const savedProjects = localStorage.getItem('glasswater_projects');
@@ -388,14 +393,24 @@ If you have any questions, please do not hesitate to contact us.
           )}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.password')}</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-light-gray border border-transparent focus:border-gold px-4 py-3 rounded outline-none transition-colors"
-              placeholder={t('admin.password_placeholder')}
-              disabled={loginLocked || isLoggingIn}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-light-gray border border-transparent focus:border-gold px-4 py-3 pr-12 rounded outline-none transition-colors"
+                placeholder={t('admin.password_placeholder')}
+                disabled={loginLocked || isLoggingIn}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-concrete-gray hover:text-navy transition-colors cursor-pointer"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <button type="submit" disabled={loginLocked || isLoggingIn} className="w-full bg-gold text-white font-semibold py-3 rounded uppercase tracking-widest hover:bg-navy transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
             {isLoggingIn ? <Loader size={16} className="animate-spin inline mr-2" /> : null}
@@ -744,7 +759,23 @@ If you have any questions, please do not hesitate to contact us.
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.admin_password')}</label>
-                      <input type="password" value={localSettings.adminPassword || ''} onChange={e => setFormSettingsVal('adminPassword', e.target.value)} className={inputClass} placeholder={t('admin.admin_password_placeholder')} />
+                      <div className="relative">
+                        <input
+                          type={showSettingsPassword ? "text" : "password"}
+                          value={localSettings.adminPassword || ''}
+                          onChange={e => setFormSettingsVal('adminPassword', e.target.value)}
+                          className={`${inputClass} pr-12`}
+                          placeholder={t('admin.admin_password_placeholder')}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSettingsPassword(!showSettingsPassword)}
+                          className="absolute right-3 top-[14px] text-concrete-gray hover:text-navy transition-colors cursor-pointer"
+                          tabIndex={-1}
+                        >
+                          {showSettingsPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

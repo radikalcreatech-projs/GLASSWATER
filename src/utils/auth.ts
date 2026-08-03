@@ -22,17 +22,23 @@ export async function login(password: string): Promise<{ success: true } | { suc
       return { success: true };
     }
 
-    // Track failed attempts
+    // Track failed attempts with expiry check
     const lockoutData = sessionStorage.getItem(LOCKOUT_KEY);
     let attempts = 1;
     if (lockoutData) {
       try {
         const lock = JSON.parse(lockoutData);
-        attempts = (lock.attempts || 0) + 1;
+        // If lockout has fully expired, reset counter
         if (lock.lockUntil && Date.now() > lock.lockUntil) {
-          attempts = 1; // Lockout expired, reset
+          attempts = 1;
+          sessionStorage.removeItem(LOCKOUT_KEY);
+        } else {
+          attempts = (lock.attempts || 0) + 1;
         }
-      } catch { /* ignore parse errors */ }
+      } catch {
+        attempts = 1;
+        sessionStorage.removeItem(LOCKOUT_KEY);
+      }
     }
 
     if (attempts >= 5) {
@@ -43,8 +49,9 @@ export async function login(password: string): Promise<{ success: true } | { suc
 
     sessionStorage.setItem(LOCKOUT_KEY, JSON.stringify({ attempts }));
     return { success: false, error: data.error || 'Invalid password. Please try again.' };
-  } catch {
-    return { success: false, error: 'Unable to connect. Please check your connection and try again.' };
+  } catch (err) {
+    console.error('[Glasswater Auth] Login network error:', err);
+    return { success: false, error: 'Unable to connect to server. Check your connection or try again later.' };
   }
 }
 
