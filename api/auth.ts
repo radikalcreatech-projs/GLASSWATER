@@ -79,27 +79,45 @@ async function sha256(message: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Base64 encoding that works in Vercel Edge (no btoa) */
+// Pure JS base64 — zero browser API dependencies, works everywhere (Edge, Workers, Node)
+const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
 function base64Encode(str: string): string {
   const encoder = new TextEncoder();
   const bytes = encoder.encode(str);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+  return bytesToBase64(bytes);
 }
 
-/** Base64URL encode for binary signature bytes */
 function base64UrlEncode(bytes: Uint8Array): string {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary)
+  return bytesToBase64(bytes)
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let result = '';
+  for (let i = 0; i < bytes.length; i += 3) {
+    const b1 = bytes[i];
+    const b2 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+    const b3 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+
+    result += BASE64_CHARS[b1 >> 2];
+    result += BASE64_CHARS[((b1 & 3) << 4) | (b2 >> 4)];
+
+    if (i + 1 < bytes.length) {
+      result += BASE64_CHARS[((b2 & 15) << 2) | (b3 >> 6)];
+    } else {
+      result += '=';
+    }
+
+    if (i + 2 < bytes.length) {
+      result += BASE64_CHARS[b3 & 63];
+    } else {
+      result += '=';
+    }
+  }
+  return result;
 }
 
 async function createToken(secret: string): Promise<string> {

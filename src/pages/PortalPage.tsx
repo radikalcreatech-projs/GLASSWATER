@@ -80,6 +80,21 @@ export function PortalPage() {
         return;
       }
 
+      // Clone the element so we can strip unsupported CSS before rendering
+      const clone = element.cloneNode(true) as HTMLElement;
+      // Strip Tailwind v4 OKLab/OKLCH color functions that html2canvas can't parse
+      clone.querySelectorAll('*').forEach((el: any) => {
+        if (el.style) {
+          for (let i = el.style.length - 1; i >= 0; i--) {
+            const prop = el.style[i];
+            const val = el.style.getPropertyValue(prop);
+            if (typeof val === 'string' && (val.includes('oklab(') || val.includes('oklch('))) {
+              el.style.removeProperty(prop);
+            }
+          }
+        }
+      });
+
       const opt: any = {
         margin:       10,
         filename:     `${retrievedDoc.code}_${retrievedDoc.clientName}.pdf`,
@@ -88,7 +103,7 @@ export function PortalPage() {
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
       };
 
-      await pdfLib().set(opt).from(element).save();
+      await pdfLib().set(opt).from(clone).save();
 
       removeToast(loadingToastId);
       addToast('success', t('toast.pdf_ready'), 4000);
