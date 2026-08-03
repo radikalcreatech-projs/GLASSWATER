@@ -91,7 +91,8 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   linkedin: 'https://linkedin.com/company/glasswater',
   paymentDetails: 'Bank: Example Bank\nAccount Name: Glasswater Fit-Outs\nAccount Number: 1234567890\nMomo: 0248284384',
   siteUrl: window.location.origin || 'https://glasswater.com',
-  // adminPassword is now managed server-side via Vercel Edge Function (api/auth.ts)
+  adminPassword: 'e6578e0c9bd51da7014c8d5d950c0410fa38e088fedb8b463191bbc6f13cbd39',
+  // adminPassword hash is used as fallback when the Vercel Edge Function is unreachable
 };
 
 const DEFAULT_DOCUMENTS: ClientDocument[] = [

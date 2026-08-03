@@ -79,14 +79,36 @@ async function sha256(message: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+/** Base64 encoding that works in Vercel Edge (no btoa) */
+function base64Encode(str: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+/** Base64URL encode for binary signature bytes */
+function base64UrlEncode(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
 async function createToken(secret: string): Promise<string> {
   const encoder = new TextEncoder();
   const secretKey = encoder.encode(secret);
 
-  // Token payload
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const header = base64Encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const now = Math.floor(Date.now() / 1000);
-  const payload = btoa(JSON.stringify({
+  const payload = base64Encode(JSON.stringify({
     sub: 'admin',
     iat: now,
     exp: now + 8 * 60 * 60, // 8 hours
@@ -101,10 +123,7 @@ async function createToken(secret: string): Promise<string> {
     ['sign']
   );
   const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(signingInput));
-  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  const signatureB64 = base64UrlEncode(new Uint8Array(signature));
 
   return `${signingInput}.${signatureB64}`;
 }
