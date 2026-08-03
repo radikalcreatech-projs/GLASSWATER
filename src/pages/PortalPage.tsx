@@ -1,36 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSettings } from '../context/SettingsContext';
+import { useToast } from '../context/ToastContext';
 import { FileText, ArrowLeft, Printer, Download, Mail, MapPin, Phone, MessageCircle, ShieldCheck, Loader } from 'lucide-react';
 import { sanitizeWhatsAppUrl } from '../utils/url';
 
 // Lazy-load html2pdf only when needed (~600KB savings on initial load)
 let html2pdf: any = null;
+let html2pdfLoadPromise: Promise<any> | null = null;
+
 async function getHtml2pdf() {
   if (!html2pdf) {
-    const module = await import('html2pdf.js');
-    html2pdf = module.default;
+    if (!html2pdfLoadPromise) {
+      html2pdfLoadPromise = import('html2pdf.js').then(module => {
+        html2pdf = module.default;
+        return html2pdf;
+      });
+    }
+    await html2pdfLoadPromise;
   }
   return html2pdf;
+}
+
+/** Extracts ?code= param from hash-based URL reliably */
+function parsePortalCode(): string | null {
+  const raw = window.location.hash;
+  const queryIndex = raw.indexOf('?');
+  if (queryIndex === -1) return null;
+  const queryString = raw.substring(queryIndex + 1);
+  const params = new URLSearchParams(queryString);
+  return params.get('code');
 }
 
 export function PortalPage() {
   const { t } = useI18n();
   const { documents, settings } = useSettings();
+  const { addToast, removeToast } = useToast();
   const [refCode, setRefCode] = useState('');
   const [retrievedDoc, setRetrievedDoc] = useState<any | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
-    // Check for ?code= parameter in URL
-    const params = new URLSearchParams(window.location.hash.split('?')[1]);
-    const codeParam = params.get('code');
+    // Check for ?code= parameter in URL hash
+    const codeParam = parsePortalCode();
     if (codeParam) {
       setRefCode(codeParam);
       const foundDoc = documents.find(doc => doc.code.toUpperCase() === codeParam.toUpperCase());
       if (foundDoc) {
         setRetrievedDoc(foundDoc);
+        // Pre-warm html2pdf import in background
+        getHtml2pdf().catch(() => {});
       } else {
         setErrorMsg(`${t('portal.doc_error')} "${codeParam}".`);
       }
@@ -40,17 +60,26 @@ export function PortalPage() {
   const handleDownloadPDF = async () => {
     if (!retrievedDoc || isDownloading) return;
     setIsDownloading(true);
+    const loadingToastId = addToast('info', t('loading.generating_pdf'), 0);
+
     try {
       const pdfLib = await getHtml2pdf();
-      // Wait a frame to ensure the DOM is painted before capturing
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      
-      const element = document.getElementById('printable-document');
+
+      // Retry DOM readiness up to 3 times with 150ms intervals
+      let element: HTMLElement | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 150));
+        element = document.getElementById('printable-document');
+        if (element && element.offsetHeight > 0) break;
+      }
+
       if (!element) {
-        alert('Unable to prepare the document. Please try again.');
+        removeToast(loadingToastId);
+        addToast('error', t('toast.pdf_error'), 5000);
         setIsDownloading(false);
         return;
       }
+
       const opt: any = {
         margin:       10,
         filename:     `${retrievedDoc.code}_${retrievedDoc.clientName}.pdf`,
@@ -58,10 +87,15 @@ export function PortalPage() {
         html2canvas:  { scale: 2, useCORS: true, windowWidth: 1024 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
       };
+
       await pdfLib().set(opt).from(element).save();
+
+      removeToast(loadingToastId);
+      addToast('success', t('toast.pdf_ready'), 4000);
     } catch (e) {
       console.error('Error generating PDF', e);
-      alert('Could not generate the document. Please check your connection and try again.');
+      removeToast(loadingToastId);
+      addToast('error', t('toast.pdf_error'), 6000);
     } finally {
       setIsDownloading(false);
     }
@@ -72,7 +106,7 @@ export function PortalPage() {
     setErrorMsg('');
 
     if (!refCode.trim()) {
-      setErrorMsg('Please enter a valid Reference Number.');
+      setErrorMsg(t('validation.enter_code'));
       return;
     }
 
@@ -81,6 +115,8 @@ export function PortalPage() {
 
     if (foundDoc) {
       setRetrievedDoc(foundDoc);
+      // Pre-warm html2pdf import
+      getHtml2pdf().catch(() => {});
     } else {
       setErrorMsg(`${t('portal.doc_error')} "${cleanedCode}". ${t('portal.doc_error_verify')}`);
     }
@@ -93,44 +129,56 @@ export function PortalPage() {
   };
 
   const handlePrint = () => {
-    window.print();
+    addToast('info', t('toast.print_opening'), 2000);
+    // Small delay to let the toast render before print dialog
+    setTimeout(() => {
+      window.print();
+    }, 300);
   };
 
   // If a document was retrieved, render the gorgeous corporate Waybill/Estimate/Invoice receipt
   if (retrievedDoc) {
     return (
-      <div className="animate-in fade-in duration-300 py-6 md:py-12 px-4 sm:px-6 max-w-4xl mx-auto print:py-0 print:px-0">
-        
+      <div className="animate-in fade-in duration-300 py-6 md:py-10 px-4 sm:px-6 max-w-4xl mx-auto print:py-0 print:px-0 relative">
+        {isDownloading && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-xl">
+            <div className="flex flex-col items-center gap-4">
+              <Loader className="animate-spin text-gold w-10 h-10" />
+              <p className="text-sm text-text-secondary font-medium">{t('loading.generating_pdf')}</p>
+            </div>
+          </div>
+        )}
+
         {/* Back and Print buttons - Hidden when printing */}
         <div className="flex flex-wrap justify-between items-center mb-6 gap-4 print:hidden">
-          <button 
-            onClick={handleBackToSearch} 
+          <button
+            onClick={handleBackToSearch}
             className="flex items-center gap-2 text-text-secondary hover:text-navy font-semibold uppercase tracking-widest text-xs transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} /> {t('portal.search_another')}
           </button>
-          
+
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleDownloadPDF}
               disabled={isDownloading}
               className="bg-navy/5 border border-navy/20 hover:bg-navy/10 text-navy px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer relative z-10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isDownloading ? <Loader size={14} className="animate-spin" /> : <Download size={14} />}
-              {isDownloading ? 'Preparing...' : t('portal.download_pdf')}
+              {isDownloading ? t('loading.generating_pdf') : t('portal.download_pdf')}
             </button>
             {retrievedDoc.fileUrl && (
-              <a 
-                href={retrievedDoc.fileUrl} 
-                target="_blank" 
-                rel="noreferrer" 
+              <a
+                href={retrievedDoc.fileUrl}
+                target="_blank"
+                rel="noreferrer"
                 className="bg-navy/5 border border-navy/20 hover:bg-navy/10 text-navy px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2"
               >
                 <Download size={14} /> {t('portal.view_file')}
               </a>
             )}
-            <button 
-              onClick={handlePrint} 
+            <button
+              onClick={handlePrint}
               className="bg-gold hover:bg-navy text-white px-5 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer relative z-10"
             >
               <Printer size={14} /> {t('portal.print')}
@@ -140,7 +188,7 @@ export function PortalPage() {
 
         {/* Corporate Letterhead & Document Card */}
         <div id="printable-document" className="bg-white rounded-xl shadow-custom border border-gold/20 p-4 sm:p-6 md:p-12 print:border-none print:shadow-none print:p-0 text-sm">
-          
+
           {/* Header Row */}
           <div className="flex flex-col sm:flex-row print:flex-row justify-between items-start sm:items-center print:items-center border-b border-light-gray pb-8 mb-8 gap-6">
             <div className="flex items-center gap-4">
@@ -234,7 +282,7 @@ export function PortalPage() {
                           {t('portal.discount')} ({retrievedDoc.discountType === 'percentage' ? `${retrievedDoc.discountValue}%` : 'Fixed'})
                         </td>
                         <td className="p-3 text-right text-red-500">
-                          - GHS {retrievedDoc.discountType === 'fixed' 
+                          - GHS {retrievedDoc.discountType === 'fixed'
                             ? Number(retrievedDoc.discountValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                             : (retrievedDoc.items.reduce((sum: number, item: any) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0) * Number(retrievedDoc.discountValue) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                           }
@@ -283,16 +331,16 @@ export function PortalPage() {
           <h3 className="font-serif text-lg font-bold text-navy mb-2">{t('portal.questions')}</h3>
           <p className="text-sm text-text-secondary mb-4">{t('portal.get_in_touch')}</p>
           <div className="flex flex-wrap justify-center gap-4">
-            <a 
-              href={sanitizeWhatsAppUrl(settings.whatsapp)} 
-              target="_blank" 
-              rel="noreferrer" 
+            <a
+              href={sanitizeWhatsAppUrl(settings.whatsapp)}
+              target="_blank"
+              rel="noreferrer"
               className="bg-[#25D366] text-white px-6 py-2.5 rounded text-xs font-semibold uppercase tracking-widest hover:bg-[#128C7E] transition-all flex items-center gap-2 shadow-sm"
             >
               <MessageCircle size={16} /> {t('whatsapp.chat')}
             </a>
-            <a 
-              href={`mailto:${settings.email}?subject=Inquiry on document ${retrievedDoc.code}`} 
+            <a
+              href={`mailto:${settings.email}?subject=Inquiry on document ${retrievedDoc.code}`}
               className="bg-navy text-white px-6 py-2.5 rounded text-xs font-semibold uppercase tracking-widest hover:bg-gold transition-all flex items-center gap-2 shadow-sm"
             >
               <Mail size={16} /> {t('portal.email_office')}
@@ -312,16 +360,16 @@ export function PortalPage() {
           <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-navy mb-4">{t('portal.title')}</h1>
           <p className="text-lg sm:text-xl text-text-secondary leading-relaxed">{t('portal.sub')}</p>
         </div>
-        
+
         <div className="bg-navy p-10 md:p-16 rounded-xl text-center max-w-3xl mx-auto shadow-custom border border-gold/30">
           <h2 className="font-serif text-3xl font-bold text-white mb-4">{t('portal.login')}</h2>
           <p className="text-base text-light-gray mb-8">{t('portal.enter')}</p>
-          
+
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto">
-            <input 
-              type="text" 
+            <input
+              type="text"
               required
-              placeholder="Enter Code" 
+              placeholder={t('admin.placeholder') + ' ' + t('admin.code')}
               value={refCode}
               onChange={e => setRefCode(e.target.value)}
               className="w-full sm:flex-1 p-4 border-none rounded font-sans text-base focus:outline-none focus:ring-2 focus:ring-gold bg-white text-text-primary uppercase"
@@ -336,7 +384,7 @@ export function PortalPage() {
               {errorMsg}
             </p>
           )}
-          
+
           <p className="mt-8 text-concrete-gray text-xs tracking-wider uppercase">
             {t('portal.demo')} ( {t('portal.try_code')} <span className="font-bold underline cursor-pointer text-gold hover:text-white transition-colors" onClick={() => { setRefCode('GW-DEMO'); setTimeout(() => handleSearch(), 100); }}>GW-DEMO</span>)
           </p>

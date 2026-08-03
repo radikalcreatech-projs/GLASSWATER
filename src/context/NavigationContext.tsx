@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 
 export type Page = 'home' | 'about' | 'services' | 'projects' | 'insights' | 'faq' | 'reviews' | 'contact' | 'careers' | 'portal' | 'post' | 'admin';
 
@@ -6,6 +6,7 @@ interface NavigationContextType {
   currentPage: Page;
   currentPostSlug: string | null;
   navigate: (page: Page, data?: string) => void;
+  isTransitioning: boolean;
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -18,6 +19,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     return validPages.includes(hash) ? hash : 'home';
   });
   const [currentPostSlug, setCurrentPostSlug] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Debounce ref prevents duplicate navigations within 500ms
+  const lastNavTimeRef = useRef(0);
+  const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Listen for browser back/forward navigation
   useEffect(() => {
@@ -32,19 +38,47 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
+  // Cleanup transition timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+    };
+  }, []);
+
   const navigate = useCallback((page: Page, data?: string) => {
-    setCurrentPage(page);
-    if (data) {
-      setCurrentPostSlug(data);
-    } else if (page !== 'post') {
-      setCurrentPostSlug(null);
-    }
+    const now = Date.now();
+
+    // Guard: ignore clicks within 500ms of the last navigation
+    if (now - lastNavTimeRef.current < 500) return;
+
+    lastNavTimeRef.current = now;
+    setIsTransitioning(true);
+
+    // Clear previous transition timeout
+    if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+
+    // Update hash first, then React state — prevents race condition
     window.location.hash = page;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Defer React state update slightly to let hash settle
+    requestAnimationFrame(() => {
+      setCurrentPage(page);
+      if (data) {
+        setCurrentPostSlug(data);
+      } else if (page !== 'post') {
+        setCurrentPostSlug(null);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Release transition lock after animation completes
+      transitionTimeoutRef.current = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 500);
+    });
   }, []);
 
   return (
-    <NavigationContext.Provider value={{ currentPage, currentPostSlug, navigate }}>
+    <NavigationContext.Provider value={{ currentPage, currentPostSlug, navigate, isTransitioning }}>
       {children}
     </NavigationContext.Provider>
   );

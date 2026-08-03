@@ -15,6 +15,7 @@ export interface WebsiteSettings {
   paymentDetails: string;
   adminPassword?: string;
   termsAndConditions?: string;
+  siteUrl: string;
 }
 
 export interface DocumentItem {
@@ -60,11 +61,11 @@ function isHashed(value: string | undefined): boolean {
   return typeof value === 'string' && /^[a-f0-9]{64}$/i.test(value);
 }
 
-export async function hashPassword(plain: string): Promise<string> {
+async function hashPassword(plain: string): Promise<string> {
   return sha256(plain);
 }
 
-export async function verifyPassword(plain: string, storedHash: string): Promise<boolean> {
+async function verifyPassword(plain: string, storedHash: string): Promise<boolean> {
   const candidate = await sha256(plain);
   // Constant-time-ish: compare every char rather than short-circuiting
   if (candidate.length !== storedHash.length) return false;
@@ -89,7 +90,8 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   instagram: 'https://instagram.com/glasswater',
   linkedin: 'https://linkedin.com/company/glasswater',
   paymentDetails: 'Bank: Example Bank\nAccount Name: Glasswater Fit-Outs\nAccount Number: 1234567890\nMomo: 0248284384',
-  adminPassword: import.meta.env.VITE_ADMIN_PASSWORD_HASH || 'e6578e0c9bd51da7014c8d5d950c0410fa38e088fedb8b463191bbc6f13cbd39',
+  siteUrl: window.location.origin || 'https://glasswater.com',
+  // adminPassword is now managed server-side via Vercel Edge Function (api/auth.ts)
 };
 
 const DEFAULT_DOCUMENTS: ClientDocument[] = [

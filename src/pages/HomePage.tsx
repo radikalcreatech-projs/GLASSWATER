@@ -1,9 +1,82 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import type { Key } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useNavigation } from '../context/NavigationContext';
-import { CheckCircle2, Building2, Star, ShieldCheck, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Building2, Star, ArrowRight } from 'lucide-react';
 import { getProjects, getPosts, defaultReviews } from '../data';
 import { RainCanvas } from '../components/RainCanvas';
+
+type Project = { id: string; title: string; category: string; description: string; image: string; [key: string]: unknown };
+type Post = { slug: string; title: string; date: string; excerpt: string; category: string; coverImage: string; content: string; [key: string]: unknown };
+
+/** Lazy-loading project card for the home page */
+function LazyProjectCard({ p, onClick }: { key?: Key; p: Project; onClick: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [bgUrl, setBgUrl] = useState('');
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !p.image) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) { setBgUrl(p.image); observer.disconnect(); } },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [p.image]);
+
+  return (
+    <div className="min-w-[85%] sm:min-w-[70%] md:min-w-0 snap-center bg-white rounded-lg overflow-hidden shadow-custom hover:-translate-y-2 transition-all cursor-pointer group" onClick={onClick}>
+      <div
+        ref={ref}
+        className="aspect-square md:aspect-auto md:h-72 bg-cover bg-center transition-transform duration-700 group-hover:scale-105 bg-light-gray"
+        style={bgUrl ? { backgroundImage: `url('${bgUrl}')` } : undefined}
+      />
+      <div className="p-6 relative bg-white z-10">
+        <h4 className="font-serif font-bold text-xl text-navy mb-2">{p.title}</h4>
+        <p className="text-steel-blue text-[0.65rem] uppercase tracking-widest font-semibold mb-3">{p.category}</p>
+        <p className="text-text-secondary text-sm mb-4 line-clamp-2">{p.description}</p>
+        <span className="inline-flex items-center gap-2 text-gold font-semibold uppercase tracking-widest text-[0.65rem] group-hover:text-navy transition-colors">
+          Explore Project <ArrowRight size={14} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Lazy-loading post card for the home page */
+function LazyPostCard({ post, onClick }: { key?: Key; post: Post; onClick: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [bgUrl, setBgUrl] = useState('');
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !post.coverImage) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) { setBgUrl(post.coverImage); observer.disconnect(); } },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [post.coverImage]);
+
+  return (
+    <div className="min-w-[85%] sm:min-w-[70%] md:min-w-0 snap-center group cursor-pointer" onClick={onClick}>
+      <div ref={ref} className="overflow-hidden rounded-lg mb-4 shadow-custom">
+        <div
+          className="aspect-square bg-cover bg-center transition-transform duration-700 group-hover:scale-105 bg-light-gray"
+          style={bgUrl ? { backgroundImage: `url('${bgUrl}')` } : undefined}
+        />
+      </div>
+      <div className="text-[0.65rem] uppercase tracking-widest text-gold font-semibold mb-2">{post.category}</div>
+      <h4 className="font-serif font-bold text-xl text-navy mb-2 group-hover:text-gold transition-colors">{post.title}</h4>
+      <p className="text-text-secondary text-sm mb-4 leading-relaxed line-clamp-2">{post.excerpt}</p>
+      <span className="inline-flex items-center gap-2 text-navy font-semibold uppercase tracking-widest text-[0.65rem] group-hover:text-gold transition-colors">
+        Read Article <ArrowRight size={14} />
+      </span>
+    </div>
+  );
+}
 
 export function HomePage() {
   const { t, lang } = useI18n();
@@ -125,20 +198,7 @@ export function HomePage() {
 
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible no-scrollbar">
             {localProjects.slice(0, 3).map(p => (
-              <div key={p.id} className="min-w-[85%] sm:min-w-[70%] md:min-w-0 snap-center bg-white rounded-lg overflow-hidden shadow-custom hover:-translate-y-2 transition-all cursor-pointer group" onClick={() => navigate('projects')}>
-                <div 
-                  className="aspect-square md:aspect-auto md:h-72 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                  style={{ backgroundImage: `url('${p.image}')` }}
-                />
-                <div className="p-6 relative bg-white z-10">
-                  <h4 className="font-serif font-bold text-xl text-navy mb-2">{p.title}</h4>
-                  <p className="text-steel-blue text-[0.65rem] uppercase tracking-widest font-semibold mb-3">{p.category}</p>
-                  <p className="text-text-secondary text-sm mb-4 line-clamp-2">{p.description}</p>
-                  <span className="inline-flex items-center gap-2 text-gold font-semibold uppercase tracking-widest text-[0.65rem] group-hover:text-navy transition-colors">
-                    Explore Project <ArrowRight size={14} />
-                  </span>
-                </div>
-              </div>
+              <LazyProjectCard key={p.id} p={p as Project} onClick={() => navigate('projects')} />
             ))}
           </div>
         </div>
@@ -196,28 +256,7 @@ export function HomePage() {
           
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible no-scrollbar">
             {localPosts.slice(0, 3).map(post => (
-              <div 
-                key={post.slug} 
-                className="min-w-[85%] sm:min-w-[70%] md:min-w-0 snap-center group cursor-pointer"
-                onClick={() => navigate('post', post.slug)}
-              >
-                <div className="overflow-hidden rounded-lg mb-4 shadow-custom">
-                  <div 
-                    className="aspect-square bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                    style={{ backgroundImage: `url('${post.coverImage}')` }}
-                  />
-                </div>
-                <div className="text-[0.65rem] uppercase tracking-widest text-gold font-semibold mb-2">
-                  {post.category}
-                </div>
-                <h4 className="font-serif font-bold text-xl text-navy mb-2 group-hover:text-gold transition-colors">{post.title}</h4>
-                <p className="text-text-secondary text-sm mb-4 leading-relaxed line-clamp-2">
-                  {post.excerpt}
-                </p>
-                <span className="inline-flex items-center gap-2 text-navy font-semibold uppercase tracking-widest text-[0.65rem] group-hover:text-gold transition-colors">
-                  Read Article <ArrowRight size={14} />
-                </span>
-              </div>
+              <LazyPostCard key={post.slug} post={post as Post} onClick={() => navigate('post', post.slug)} />
             ))}
           </div>
         </div>

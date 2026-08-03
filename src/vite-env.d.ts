@@ -8,7 +8,6 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_STORAGE_BUCKET: string;
   readonly VITE_FIREBASE_MESSAGING_SENDER_ID: string;
   readonly VITE_FIREBASE_OAUTH_CLIENT_ID: string;
-  readonly VITE_ADMIN_PASSWORD_HASH: string;
   readonly GEMINI_API_KEY: string;
   readonly APP_URL: string;
 }

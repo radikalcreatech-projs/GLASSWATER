@@ -1,21 +1,26 @@
 import React from "react";
 import { useState, useEffect } from 'react';
 import { useNavigation } from '../context/NavigationContext';
-import { Settings, LogOut, CheckCircle2, XCircle, Trash2, Edit, Star, Plus, FileText, Copy, Check, Info, Share2, Eye, PlusCircle, Trash, Globe, Download } from 'lucide-react';
+import { Settings, LogOut, CheckCircle2, XCircle, Trash2, Edit, Star, Plus, FileText, Copy, Check, Info, Share2, Eye, PlusCircle, Trash, Globe, Download, Loader } from 'lucide-react';
 import { projects as defaultProjects, posts as defaultPosts } from '../data';
-import { useSettings, WebsiteSettings, ClientDocument, DocumentItem, verifyPassword } from '../context/SettingsContext';
+import { useSettings, WebsiteSettings, ClientDocument, DocumentItem } from '../context/SettingsContext';
+import { useI18n } from '../context/I18nContext';
+import { useToast } from '../context/ToastContext';
+import { login as authLogin, logout as authLogout, isAuthenticated as checkAuth, isLockedOut, clearLockout } from '../utils/auth';
 
 export function AdminPage() {
-  const { navigate } = useNavigation();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { navigate, isTransitioning } = useNavigation();
+  const { t } = useI18n();
+  const { addToast } = useToast();
+  const [isAuthenticated, setIsAuthenticated] = useState(() => checkAuth());
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [loginLocked, setLoginLocked] = useState(false);
-  const [lockCountdown, setLockCountdown] = useState(0);
+  const [loginLocked, setLoginLocked] = useState(() => isLockedOut().locked);
+  const [lockCountdown, setLockCountdown] = useState(() => isLockedOut().remainingSeconds);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-   
+
   const [activeTab, setActiveTab] = useState<'reviews' | 'projects' | 'insights' | 'settings' | 'documents'>('reviews');
-  
+
   const [reviews, setReviews] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
@@ -25,16 +30,19 @@ export function AdminPage() {
 
   // Settings & Documents Integration
   const { settings, updateSettings, documents, addDocument, updateDocument, deleteDocument } = useSettings();
-  
+
   const [localSettings, setLocalSettings] = useState<WebsiteSettings>({ ...settings });
   const [settingsSavedMsg, setSettingsSavedMsg] = useState(false);
-  
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
   // Client Documents States
   const [showDocForm, setShowDocForm] = useState(false);
   const [editingDoc, setEditingDoc] = useState<ClientDocument | null>(null);
   const [searchDocQuery, setSearchDocQuery] = useState('');
   const [copyCodeSuccess, setCopyCodeSuccess] = useState<string | null>(null);
   const [docSaveMessage, setDocSaveMessage] = useState<string | null>(null);
+  const [isSavingDoc, setIsSavingDoc] = useState(false);
+  const [docErrors, setDocErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setLocalSettings({ ...settings });
@@ -71,7 +79,7 @@ export function AdminPage() {
       }
       return item;
     });
-    
+
     setEditingDoc({
       ...editingDoc,
       items: updatedItems,
@@ -125,107 +133,96 @@ export function AdminPage() {
     }
   };
 
-  // Validate document before saving
-  const validateDocument = (doc: ClientDocument): string | null => {
-    if (!doc.code.trim()) return 'Reference code is required.';
-    if (!doc.clientName.trim()) return 'Client name is required.';
-    if (!doc.title.trim()) return 'Document title is required.';
-    if (!doc.items.length) return 'At least one line item is required.';
+  // Validate document before saving — returns errors object or empty
+  const validateDocument = (doc: ClientDocument): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (!doc.code.trim()) errs.code = t('validation.code_required');
+    if (!doc.clientName.trim()) errs.clientName = t('validation.client_required');
+    if (!doc.title.trim()) errs.title = t('validation.title_required');
+    if (!doc.items.length) errs.items = t('validation.items_required');
     for (const item of doc.items) {
-      if (!item.description.trim()) return 'Every line item must have a description.';
+      if (!item.description.trim()) { errs[`item_desc_${item.id}`] = t('validation.item_desc_required'); break; }
       const qty = Number(item.quantity);
-      if (!Number.isFinite(qty) || qty < 1) return 'Quantity must be at least 1 for all items.';
+      if (!Number.isFinite(qty) || qty < 1) { errs[`item_qty_${item.id}`] = t('validation.qty_min'); break; }
       const price = Number(item.unitPrice);
-      if (!Number.isFinite(price) || price < 0) return 'Unit price must be 0 or greater for all items.';
+      if (!Number.isFinite(price) || price < 0) { errs[`item_price_${item.id}`] = t('validation.price_non_negative'); break; }
     }
     if (doc.discountType === 'percentage') {
       const dv = Number(doc.discountValue);
-      if (!Number.isFinite(dv) || dv < 0 || dv > 100) return 'Percentage discount must be between 0 and 100.';
+      if (!Number.isFinite(dv) || dv < 0 || dv > 100) errs.discount = t('validation.discount_range');
     } else if (doc.discountType === 'fixed') {
       const dv = Number(doc.discountValue);
-      if (!Number.isFinite(dv) || dv < 0) return 'Fixed discount must be 0 or greater.';
+      if (!Number.isFinite(dv) || dv < 0) errs.discount = t('validation.discount_non_negative');
     }
-    return null;
+    return errs;
   };
 
   const handleDocSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingDoc) return;
 
-    const validationError = validateDocument(editingDoc);
-    if (validationError) {
-      alert(validationError);
+    const validationErrors = validateDocument(editingDoc);
+    if (Object.keys(validationErrors).length > 0) {
+      setDocErrors(validationErrors);
+      addToast('error', 'Please fix the errors in the document form.', 4000);
       return;
     }
 
-    // If the code already exists in the documents array, update it; otherwise add it
-    const codeExists = documents.some(d => d.code === editingDoc.code);
-    if (codeExists) {
-      updateDocument(editingDoc);
-    } else {
-      addDocument(editingDoc);
-    }
+    setIsSavingDoc(true);
+    setDocErrors({});
 
-    setShowDocForm(false);
-    // Prepare auto-message for the admin to share with the client
-    const message = `Dear ${editingDoc.clientName},
+    // Small delay for UX
+    setTimeout(() => {
+      const codeExists = documents.some(d => d.code === editingDoc.code);
+      if (codeExists) {
+        updateDocument(editingDoc);
+      } else {
+        addDocument(editingDoc);
+      }
+
+      setShowDocForm(false);
+
+      // Prepare auto-message with actual website URL
+      const siteUrl = settings.siteUrl || window.location.origin || 'https://glasswater.com';
+      const portalUrl = `${siteUrl}/#portal?code=${editingDoc.code}`;
+      const message = `Dear ${editingDoc.clientName},
 
 Your ${editingDoc.type.toLowerCase()} (#${editingDoc.code}) for "${editingDoc.title}" is ready.
 
-Please visit our client portal at [website link] and enter the code ${editingDoc.code} — ${editingDoc.code} to view and download your document.
+Please visit our client portal at ${portalUrl} and enter the code ${editingDoc.code} to view and download your document.
 
 If you have any questions, please do not hesitate to contact us.
 
 — Glasswater Fit-Outs & Co. Ltd.`;
-    setDocSaveMessage(message);
-    setEditingDoc(null);
+
+      setDocSaveMessage(message);
+      setEditingDoc(null);
+      setIsSavingDoc(false);
+      addToast('success', t('toast.doc_saved'), 4000);
+    }, 300);
   };
 
   useEffect(() => {
-    // Check for existing lockout
-    const lockoutData = localStorage.getItem('glasswater_admin_lockout');
-    if (lockoutData) {
-      try {
-        const lock = JSON.parse(lockoutData);
-        if (lock.lockUntil && Date.now() < lock.lockUntil) {
-          setLoginLocked(true);
-          setLockCountdown(Math.ceil((lock.lockUntil - Date.now()) / 1000));
-        } else {
-          // Lockout expired — clear it
-          localStorage.removeItem('glasswater_admin_lockout');
-        }
-      } catch (e) {
-        console.error('Error parsing lockout data', e);
-      }
+    const lockState = isLockedOut();
+    if (lockState.locked) {
+      setLoginLocked(true);
+      setLockCountdown(lockState.remainingSeconds);
     }
 
-    // Load reviews
     const savedReviews = localStorage.getItem('glasswater_reviews');
     if (savedReviews) {
-      try {
-        setReviews(JSON.parse(savedReviews));
-      } catch (e) { console.error('Failed to load glasswater_reviews from localStorage:', e); }
+      try { setReviews(JSON.parse(savedReviews)); } catch (e) { console.error('Failed to load glasswater_reviews:', e); }
     }
-    
-    // Load projects
+
     const savedProjects = localStorage.getItem('glasswater_projects');
     if (savedProjects) {
-      try {
-        setProjects(JSON.parse(savedProjects));
-      } catch (e) { console.error('Failed to load glasswater_projects from localStorage:', e); }
-    } else {
-      setProjects(defaultProjects);
-    }
-    
-    // Load posts
+      try { setProjects(JSON.parse(savedProjects)); } catch (e) { console.error('Failed to load glasswater_projects:', e); }
+    } else { setProjects(defaultProjects); }
+
     const savedPosts = localStorage.getItem('glasswater_posts');
     if (savedPosts) {
-      try {
-        setPosts(JSON.parse(savedPosts));
-      } catch (e) { console.error('Failed to load glasswater_posts from localStorage:', e); }
-    } else {
-      setPosts(defaultPosts);
-    }
+      try { setPosts(JSON.parse(savedPosts)); } catch (e) { console.error('Failed to load glasswater_posts:', e); }
+    } else { setPosts(defaultPosts); }
   }, []);
 
   // Session inactivity timeout (30 minutes)
@@ -240,7 +237,7 @@ If you have any questions, please do not hesitate to contact us.
     const checkInterval = setInterval(() => {
       if (Date.now() - lastActivity > 30 * 60 * 1000) {
         setIsAuthenticated(false);
-        setLoginError('Your session ended due to inactivity. Please log in again.');
+        setLoginError(t('admin.session_expired'));
       }
     }, 10000);
 
@@ -248,7 +245,7 @@ If you have any questions, please do not hesitate to contact us.
       events.forEach(e => window.removeEventListener(e, updateActivity));
       clearInterval(checkInterval);
     };
-  }, [isAuthenticated, lastActivity]);
+  }, [isAuthenticated, lastActivity, t]);
 
   // Brute-force lockout countdown timer
   useEffect(() => {
@@ -274,55 +271,40 @@ If you have any questions, please do not hesitate to contact us.
 
     setIsLoggingIn(true);
     try {
+      const result = await authLogin(password);
 
-    const storedHash = settings.adminPassword || 'GWADMIN';
-    // Try hash-based verification first, fall back to plain text for migration
-    let isValid = false;
-    if (/^[a-f0-9]{64}$/i.test(storedHash)) {
-      isValid = await verifyPassword(password, storedHash);
-    } else {
-      // Legacy plain-text password (should be migrated by SettingsContext on next load)
-      isValid = password === storedHash;
-    }
-
-    if (isValid) {
-      setIsAuthenticated(true);
-      setLoginError('');
-      // Clear any lockout on successful login
-      localStorage.removeItem('glasswater_admin_lockout');
-      setIsLoggingIn(false);
-    } else {
-      setIsLoggingIn(false);
-      // Track failed attempt
-      const lockoutData = localStorage.getItem('glasswater_admin_lockout');
-      let attempts = 1;
-      if (lockoutData) {
-        try {
-          const lock = JSON.parse(lockoutData);
-          attempts = (lock.attempts || 0) + 1;
-        } catch (e) { console.error('Failed to parse lockout data:', e); }
-      }
-
-      if (attempts >= 5) {
-        // Lockout: 15 minutes
-        const lockUntil = Date.now() + 15 * 60 * 1000;
-        localStorage.setItem('glasswater_admin_lockout', JSON.stringify({ attempts, lockUntil }));
-        setLoginLocked(true);
-        setLockCountdown(900);
-        setLoginError('Too many failed attempts. Please wait 15 minutes.');
+      if (result.success) {
+        setIsAuthenticated(true);
+        setLoginError('');
+        clearLockout();
+        setLoginLocked(false);
+        addToast('success', 'Welcome back!', 3000);
       } else {
-        localStorage.setItem('glasswater_admin_lockout', JSON.stringify({ attempts }));
-        setLoginError('Invalid password. Please try again.');
+        const errMsg = (result as { success: false; error: string }).error;
+        setLoginError(errMsg);
+        addToast('error', errMsg, 5000);
+        const lockState = isLockedOut();
+        if (lockState.locked) {
+          setLoginLocked(true);
+          setLockCountdown(lockState.remainingSeconds);
+        }
       }
-    }
     } finally {
-      // Ensure we always reset if the try block exits via an unexpected path
-      if (isLoggingIn) setIsLoggingIn(false);
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleTabClick = (tab: typeof activeTab) => {
+    if (isTransitioning) return;
+    setActiveTab(tab);
+    setShowForm(false);
+    if (tab !== 'documents') {
+      setShowDocForm(false);
     }
   };
 
   const deleteReview = (index: number) => {
-    if (!confirm('Are you sure?')) return;
+    if (!confirm(t('admin.confirm_delete'))) return;
     const newReviews = [...reviews];
     newReviews.splice(index, 1);
     setReviews(newReviews);
@@ -330,14 +312,14 @@ If you have any questions, please do not hesitate to contact us.
   };
 
   const deleteProject = (id: number) => {
-    if (!confirm('Are you sure?')) return;
+    if (!confirm(t('admin.confirm_delete'))) return;
     const newProjects = projects.filter(p => p.id !== id);
     setProjects(newProjects);
     localStorage.setItem('glasswater_projects', JSON.stringify(newProjects));
   };
 
   const deletePost = (slug: string) => {
-    if (!confirm('Are you sure?')) return;
+    if (!confirm(t('admin.confirm_delete'))) return;
     const newPosts = posts.filter(p => p.slug !== slug);
     setPosts(newPosts);
     localStorage.setItem('glasswater_posts', JSON.stringify(newPosts));
@@ -350,10 +332,7 @@ If you have any questions, please do not hesitate to contact us.
       const idx = newProjects.findIndex(p => p.id === editingItem.id);
       if (idx !== -1) newProjects[idx] = editingItem;
     } else {
-      newProjects.unshift({
-        ...editingItem,
-        id: Date.now()
-      });
+      newProjects.unshift({ ...editingItem, id: Date.now() });
     }
     setProjects(newProjects);
     localStorage.setItem('glasswater_projects', JSON.stringify(newProjects));
@@ -382,32 +361,45 @@ If you have any questions, please do not hesitate to contact us.
     setEditingItem(null);
   };
 
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingSettings(true);
+    setTimeout(() => {
+      updateSettings(localSettings);
+      setSettingsSavedMsg(true);
+      setIsSavingSettings(false);
+      addToast('success', t('toast.settings_saved'), 3000);
+      setTimeout(() => setSettingsSavedMsg(false), 4000);
+    }, 300);
+  };
+
   if (!isAuthenticated) {
     return (
-      <div className="py-24 px-6 bg-light-gray min-h-[60vh] flex items-center justify-center">
+      <div className="py-16 md:py-24 px-6 bg-light-gray min-h-[60vh] flex items-center justify-center">
         <form onSubmit={handleLogin} className="bg-white p-8 rounded-xl shadow-custom max-w-md w-full border border-gold/30">
           <div className="flex justify-center mb-6">
             <Settings className="text-gold w-12 h-12" />
           </div>
-          <h1 className="font-serif text-2xl font-bold text-navy text-center mb-6">Admin Login</h1>
+          <h1 className="font-serif text-2xl font-bold text-navy text-center mb-6">{t('admin.login')}</h1>
           {loginError && (
             <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded text-sm text-center font-medium">
               {loginError}
             </div>
           )}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Password</label>
-            <input 
-              type="password" 
+            <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.password')}</label>
+            <input
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-light-gray border border-transparent focus:border-gold px-4 py-3 rounded outline-none transition-colors"
-              placeholder="Enter Admin Password"
+              placeholder={t('admin.password_placeholder')}
               disabled={loginLocked || isLoggingIn}
             />
           </div>
-          <button type="submit" disabled={loginLocked || isLoggingIn} className="w-full bg-gold text-white font-semibold py-3 rounded uppercase tracking-widest hover:bg-navy transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            {isLoggingIn ? 'Verifying...' : 'Login'}
+          <button type="submit" disabled={loginLocked || isLoggingIn} className="w-full bg-gold text-white font-semibold py-3 rounded uppercase tracking-widest hover:bg-navy transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+            {isLoggingIn ? <Loader size={16} className="animate-spin inline mr-2" /> : null}
+            {isLoggingIn ? t('admin.logging_in') : t('admin.login_btn')}
           </button>
         </form>
       </div>
@@ -415,63 +407,52 @@ If you have any questions, please do not hesitate to contact us.
   }
 
   const inputClass = "w-full p-3 border border-light-gray rounded font-sans text-base mb-4 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold bg-bg-body text-text-primary transition-all";
+  const errorInputClass = "w-full p-3 border rounded font-sans text-base mb-4 focus:outline-none focus:ring-1 focus:ring-gold bg-bg-body text-text-primary transition-all input-error";
 
   return (
-    <div className="py-12 px-6 bg-light-gray min-h-[80vh]">
+    <div className="py-6 md:py-8 px-4 sm:px-6 bg-light-gray min-h-[80vh]">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="font-serif text-3xl md:text-4xl font-bold text-navy flex items-center gap-3">
-            <Settings className="text-gold" /> Admin Dashboard
+            <Settings className="text-gold" /> {t('admin.dashboard')}
           </h1>
-          <button 
-            onClick={() => setIsAuthenticated(false)}
-            className="flex items-center gap-2 text-text-secondary hover:text-navy transition-colors"
+          <button
+            onClick={() => { authLogout(); setIsAuthenticated(false); }}
+            className="flex items-center gap-2 text-text-secondary hover:text-navy transition-colors cursor-pointer"
           >
-            <LogOut size={20} /> Logout
+            <LogOut size={20} /> {t('admin.logout')}
           </button>
         </div>
-        
-        <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
-          <button 
-            onClick={() => { setActiveTab('reviews'); setShowForm(false); }}
-            className={`px-6 py-3 rounded font-semibold uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'reviews' ? 'bg-navy text-white' : 'bg-white text-navy hover:bg-gold/10'}`}
-          >
-            Manage Reviews
-          </button>
-          <button 
-            onClick={() => { setActiveTab('projects'); setShowForm(false); }}
-            className={`px-6 py-3 rounded font-semibold uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'projects' ? 'bg-navy text-white' : 'bg-white text-navy hover:bg-gold/10'}`}
-          >
-            Manage Projects
-          </button>
-          <button 
-            onClick={() => { setActiveTab('insights'); setShowForm(false); }}
-            className={`px-6 py-3 rounded font-semibold uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'insights' ? 'bg-navy text-white' : 'bg-white text-navy hover:bg-gold/10'}`}
-          >
-            Manage Insights
-          </button>
-          <button 
-            onClick={() => { setActiveTab('settings'); setShowForm(false); setShowDocForm(false); }}
-            className={`px-6 py-3 rounded font-semibold uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'settings' ? 'bg-navy text-white' : 'bg-white text-navy hover:bg-gold/10'}`}
-          >
-            Website Settings
-          </button>
-          <button 
-            onClick={() => { setActiveTab('documents'); setShowForm(false); setShowDocForm(false); }}
-            className={`px-6 py-3 rounded font-semibold uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'documents' ? 'bg-navy text-white' : 'bg-white text-navy hover:bg-gold/10'}`}
-          >
-            Client Documents
-          </button>
+
+        <div className="flex gap-2 md:gap-4 mb-6 overflow-x-auto pb-2 no-scrollbar">
+          {([
+            ['reviews', t('admin.tab_reviews')],
+            ['projects', t('admin.tab_projects')],
+            ['insights', t('admin.tab_insights')],
+            ['settings', t('admin.tab_settings')],
+            ['documents', t('admin.tab_documents')],
+          ] as const).map(([tab, label]) => (
+            <button
+              key={tab}
+              onClick={() => handleTabClick(tab)}
+              disabled={isTransitioning}
+              className={`px-4 md:px-6 py-3 rounded font-semibold uppercase tracking-widest transition-colors whitespace-nowrap text-xs md:text-sm cursor-pointer disabled:opacity-50 ${
+                activeTab === tab ? 'bg-navy text-white' : 'bg-white text-navy hover:bg-gold/10'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-        
-        <div className="bg-white rounded-xl shadow-custom p-6 md:p-8 border border-gold/20">
-          
+
+        <div className="bg-white rounded-xl shadow-custom p-4 md:p-8 border border-gold/20">
+
           {/* REVIEWS TAB */}
           {activeTab === 'reviews' && (
             <div>
-              <h2 className="font-serif text-2xl font-bold text-navy mb-6">User Reviews ({reviews.length})</h2>
+              <h2 className="font-serif text-2xl font-bold text-navy mb-6">{t('admin.reviews_count')} ({reviews.length})</h2>
               {reviews.length === 0 ? (
-                <p className="text-text-secondary">No reviews found.</p>
+                <p className="text-text-secondary">{t('admin.no_reviews')}</p>
               ) : (
                 <div className="grid gap-6">
                   {reviews.map((r, i) => (
@@ -489,8 +470,8 @@ If you have any questions, please do not hesitate to contact us.
                         <p className="text-text-secondary">"{r.text}"</p>
                       </div>
                       <div className="flex items-start">
-                        <button onClick={() => deleteReview(i)} className="text-red-500 hover:text-red-700 p-2 bg-red-50 rounded transition-colors flex items-center gap-2">
-                          <Trash2 size={18} /> <span className="text-sm font-semibold">Delete</span>
+                        <button onClick={() => deleteReview(i)} className="text-red-500 hover:text-red-700 p-2 bg-red-50 rounded transition-colors flex items-center gap-2 cursor-pointer">
+                          <Trash2 size={18} /> <span className="text-sm font-semibold">{t('admin.delete')}</span>
                         </button>
                       </div>
                     </div>
@@ -499,20 +480,20 @@ If you have any questions, please do not hesitate to contact us.
               )}
             </div>
           )}
-          
+
           {/* PROJECTS TAB */}
           {activeTab === 'projects' && !showForm && (
             <div>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="font-serif text-2xl font-bold text-navy">Projects ({projects.length})</h2>
-                <button 
+                <h2 className="font-serif text-2xl font-bold text-navy">{t('admin.projects_count')} ({projects.length})</h2>
+                <button
                   onClick={() => {
                     setEditingItem({ title: '', category: '', desc: '', value: '', duration: '', image: 'https://lh3.googleusercontent.com/d/1yybAmLVE2csJ7mUpp1kqgYMA_Jsk4aeZ' });
                     setShowForm(true);
                   }}
-                  className="bg-gold text-white px-4 py-2 rounded font-semibold uppercase tracking-widest text-sm hover:bg-navy transition-colors flex items-center gap-2"
+                  className="bg-gold text-white px-4 py-2 rounded font-semibold uppercase tracking-widest text-sm hover:bg-navy transition-colors flex items-center gap-2 cursor-pointer"
                 >
-                  <Plus size={16} /> Add New
+                  <Plus size={16} /> {t('admin.add_new')}
                 </button>
               </div>
               <div className="grid gap-4">
@@ -526,16 +507,10 @@ If you have any questions, please do not hesitate to contact us.
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <button 
-                        onClick={() => { setEditingItem(p); setShowForm(true); }}
-                        className="p-2 text-steel-blue hover:text-gold bg-light-gray rounded transition-colors"
-                      >
+                      <button onClick={() => { setEditingItem(p); setShowForm(true); }} className="p-2 text-steel-blue hover:text-gold bg-light-gray rounded transition-colors cursor-pointer">
                         <Edit size={18} />
                       </button>
-                      <button 
-                        onClick={() => deleteProject(p.id)}
-                        className="p-2 text-red-500 hover:text-red-700 bg-red-50 rounded transition-colors"
-                      >
+                      <button onClick={() => deleteProject(p.id)} className="p-2 text-red-500 hover:text-red-700 bg-red-50 rounded transition-colors cursor-pointer">
                         <Trash2 size={18} />
                       </button>
                     </div>
@@ -548,40 +523,40 @@ If you have any questions, please do not hesitate to contact us.
           {activeTab === 'projects' && showForm && (
             <div>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="font-serif text-2xl font-bold text-navy">{editingItem?.id ? 'Edit Project' : 'New Project'}</h2>
-                <button onClick={() => setShowForm(false)} className="text-text-secondary hover:text-navy font-semibold uppercase tracking-widest text-sm transition-colors">
-                  Cancel
+                <h2 className="font-serif text-2xl font-bold text-navy">{editingItem?.id ? t('admin.edit_project') : t('admin.new_project')}</h2>
+                <button onClick={() => setShowForm(false)} className="text-text-secondary hover:text-navy font-semibold uppercase tracking-widest text-sm transition-colors cursor-pointer">
+                  {t('admin.cancel')}
                 </button>
               </div>
               <form onSubmit={handleProjectSubmit}>
-                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Title</label>
+                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.title')}</label>
                 <input type="text" required value={editingItem.title} onChange={e => setEditingItem({...editingItem, title: e.target.value})} className={inputClass} />
-                
-                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Category</label>
+
+                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.category')}</label>
                 <input type="text" required value={editingItem.category} onChange={e => setEditingItem({...editingItem, category: e.target.value})} className={inputClass} />
-                
-                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Description</label>
+
+                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.description')}</label>
                 <textarea required rows={4} value={editingItem.desc} onChange={e => setEditingItem({...editingItem, desc: e.target.value})} className={inputClass}></textarea>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Value</label>
-                    <input type="text" value={editingItem.value} onChange={e => setEditingItem({...editingItem, value: e.target.value})} className={inputClass} placeholder="Budget" />
+                    <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.value')}</label>
+                    <input type="text" value={editingItem.value} onChange={e => setEditingItem({...editingItem, value: e.target.value})} className={inputClass} placeholder={t('admin.budget')} />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Duration</label>
-                    <input type="text" value={editingItem.duration} onChange={e => setEditingItem({...editingItem, duration: e.target.value})} className={inputClass} placeholder="Duration" />
+                    <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.duration')}</label>
+                    <input type="text" value={editingItem.duration} onChange={e => setEditingItem({...editingItem, duration: e.target.value})} className={inputClass} />
                   </div>
                 </div>
 
-                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Image URL</label>
+                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.image_url')}</label>
                 <input type="text" required value={editingItem.image} onChange={e => setEditingItem({...editingItem, image: e.target.value})} className={inputClass} />
                 {editingItem.image && (
                   <div className="mb-4 w-32 h-32 bg-cover bg-center rounded border border-light-gray" style={{backgroundImage: `url(${editingItem.image})`}} />
                 )}
 
-                <button type="submit" className="bg-navy text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-gold transition-colors">
-                  Save Project
+                <button type="submit" className="bg-navy text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer">
+                  {t('admin.save_project')}
                 </button>
               </form>
             </div>
@@ -591,15 +566,15 @@ If you have any questions, please do not hesitate to contact us.
           {activeTab === 'insights' && !showForm && (
             <div>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="font-serif text-2xl font-bold text-navy">Insights ({posts.length})</h2>
-                <button 
+                <h2 className="font-serif text-2xl font-bold text-navy">{t('admin.insights_count')} ({posts.length})</h2>
+                <button
                   onClick={() => {
                     setEditingItem({ title: '', slug: '', category: '', excerpt: '', content: '', date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), coverImage: 'https://lh3.googleusercontent.com/d/1yybAmLVE2csJ7mUpp1kqgYMA_Jsk4aeZ' });
                     setShowForm(true);
                   }}
-                  className="bg-gold text-white px-4 py-2 rounded font-semibold uppercase tracking-widest text-sm hover:bg-navy transition-colors flex items-center gap-2"
+                  className="bg-gold text-white px-4 py-2 rounded font-semibold uppercase tracking-widest text-sm hover:bg-navy transition-colors flex items-center gap-2 cursor-pointer"
                 >
-                  <Plus size={16} /> Add New
+                  <Plus size={16} /> {t('admin.add_new')}
                 </button>
               </div>
               <div className="grid gap-4">
@@ -613,16 +588,10 @@ If you have any questions, please do not hesitate to contact us.
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <button 
-                        onClick={() => { setEditingItem({...p, originalSlug: p.slug}); setShowForm(true); }}
-                        className="p-2 text-steel-blue hover:text-gold bg-light-gray rounded transition-colors"
-                      >
+                      <button onClick={() => { setEditingItem({...p, originalSlug: p.slug}); setShowForm(true); }} className="p-2 text-steel-blue hover:text-gold bg-light-gray rounded transition-colors cursor-pointer">
                         <Edit size={18} />
                       </button>
-                      <button 
-                        onClick={() => deletePost(p.slug)}
-                        className="p-2 text-red-500 hover:text-red-700 bg-red-50 rounded transition-colors"
-                      >
+                      <button onClick={() => deletePost(p.slug)} className="p-2 text-red-500 hover:text-red-700 bg-red-50 rounded transition-colors cursor-pointer">
                         <Trash2 size={18} />
                       </button>
                     </div>
@@ -635,47 +604,47 @@ If you have any questions, please do not hesitate to contact us.
           {activeTab === 'insights' && showForm && (
             <div>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="font-serif text-2xl font-bold text-navy">{editingItem?.originalSlug ? 'Edit Insight' : 'New Insight'}</h2>
-                <button onClick={() => setShowForm(false)} className="text-text-secondary hover:text-navy font-semibold uppercase tracking-widest text-sm transition-colors">
-                  Cancel
+                <h2 className="font-serif text-2xl font-bold text-navy">{editingItem?.originalSlug ? t('admin.edit_insight') : t('admin.new_insight')}</h2>
+                <button onClick={() => setShowForm(false)} className="text-text-secondary hover:text-navy font-semibold uppercase tracking-widest text-sm transition-colors cursor-pointer">
+                  {t('admin.cancel')}
                 </button>
               </div>
               <form onSubmit={handlePostSubmit}>
-                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Title</label>
+                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.title')}</label>
                 <input type="text" required value={editingItem.title} onChange={e => setEditingItem({...editingItem, title: e.target.value})} className={inputClass} />
-                
+
                 {editingItem.originalSlug && (
                   <>
-                    <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">URL Slug</label>
+                    <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.slug')}</label>
                     <input type="text" required value={editingItem.slug} onChange={e => setEditingItem({...editingItem, slug: e.target.value})} className={inputClass} />
                   </>
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Category</label>
+                    <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.category')}</label>
                     <input type="text" required value={editingItem.category} onChange={e => setEditingItem({...editingItem, category: e.target.value})} className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Date</label>
+                    <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.date')}</label>
                     <input type="text" required value={editingItem.date} onChange={e => setEditingItem({...editingItem, date: e.target.value})} className={inputClass} />
                   </div>
                 </div>
-                
-                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Excerpt</label>
+
+                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.excerpt')}</label>
                 <textarea required rows={2} value={editingItem.excerpt} onChange={e => setEditingItem({...editingItem, excerpt: e.target.value})} className={inputClass}></textarea>
-                
-                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Content (Markdown supported via formatting)</label>
-                <textarea required rows={8} value={editingItem.content} onChange={e => setEditingItem({...editingItem, content: e.target.value})} className={inputClass} placeholder="Use '### Header' for sections, empty lines between paragraphs"></textarea>
-                
-                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">Cover Image URL</label>
+
+                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.content')}</label>
+                <textarea required rows={8} value={editingItem.content} onChange={e => setEditingItem({...editingItem, content: e.target.value})} className={inputClass}></textarea>
+
+                <label className="block text-sm font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.cover_image')}</label>
                 <input type="text" required value={editingItem.coverImage} onChange={e => setEditingItem({...editingItem, coverImage: e.target.value})} className={inputClass} />
                 {editingItem.coverImage && (
                   <div className="mb-4 w-32 h-32 bg-cover bg-center rounded border border-light-gray" style={{backgroundImage: `url(${editingItem.coverImage})`}} />
                 )}
 
-                <button type="submit" className="bg-navy text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-gold transition-colors">
-                  Save Insight
+                <button type="submit" className="bg-navy text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer">
+                  {t('admin.save_insight')}
                 </button>
               </form>
             </div>
@@ -685,109 +654,105 @@ If you have any questions, please do not hesitate to contact us.
           {activeTab === 'settings' && (
             <div>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="font-serif text-2xl font-bold text-navy">Global Website Settings</h2>
-                <span className="text-sm font-semibold uppercase tracking-widest text-gold bg-gold/10 px-3 py-1 rounded">Live Site Config</span>
+                <h2 className="font-serif text-2xl font-bold text-navy">{t('admin.settings_title')}</h2>
+                <span className="text-sm font-semibold uppercase tracking-widest text-gold bg-gold/10 px-3 py-1 rounded">{t('admin.settings_badge')}</span>
               </div>
-              
+
               {settingsSavedMsg && (
                 <div className="mb-6 p-4 bg-green-50 text-green-700 border border-green-200 rounded-lg flex items-center gap-2">
                   <CheckCircle2 size={20} className="shrink-0 text-green-600" />
-                  <span className="font-medium">Website settings updated successfully! Your updates are active on the site now.</span>
+                  <span className="font-medium">{t('admin.settings_saved')}</span>
                 </div>
               )}
 
-              <form onSubmit={(e) => { e.preventDefault(); updateSettings(localSettings); setSettingsSavedMsg(true); setTimeout(() => setSettingsSavedMsg(false), 4000); }}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                  {/* Branding & Media Section */}
+              <form onSubmit={handleSaveSettings}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray">
                     <h3 className="font-serif text-lg font-bold text-navy mb-4 flex items-center gap-2 border-b border-light-gray pb-2">
-                      <Globe size={18} className="text-gold" /> Core Visual Assets
+                      <Globe size={18} className="text-gold" /> {t('admin.core_visual')}
                     </h3>
-                    
-                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Logo Image URL</label>
+                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.logo_url')}</label>
                     <input type="text" required value={localSettings.logoUrl} onChange={e => setFormSettingsVal('logoUrl', e.target.value)} className={inputClass} />
                     {localSettings.logoUrl && (
                       <div className="mb-4 p-3 bg-white border border-light-gray rounded flex items-center justify-center h-20">
-                        <img src={localSettings.logoUrl} alt="Logo Preview" className="h-12 object-contain" />
+                        <img src={localSettings.logoUrl} alt="Logo" className="h-12 object-contain" />
                       </div>
                     )}
-
-                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Contact Page Image URL</label>
-                    <input type="text" required value={localSettings.contactImageUrl} onChange={e => setFormSettingsVal('contactImageUrl', e.target.value)} className={inputClass} />
+                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.contact_image_url')}</label>
+                    <input type="text" required value={localSettings.contactImageUrl} onChange={e => setFormSettingsVal('contactImageUrl', e.target.value)} className={`${inputClass} !mb-0`} />
                     {localSettings.contactImageUrl && (
-                      <div className="mb-4 p-2 bg-white border border-light-gray rounded flex items-center justify-center h-28">
-                        <img src={localSettings.contactImageUrl} alt="Contact Preview" className="h-24 object-contain" />
+                      <div className="mt-2 p-2 bg-white border border-light-gray rounded flex items-center justify-center h-20">
+                        <img src={localSettings.contactImageUrl} alt="Contact" className="h-16 object-contain" />
                       </div>
                     )}
+                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest mt-4">{t('admin.site_url_label')}</label>
+                    <input type="text" required value={localSettings.siteUrl || ''} onChange={e => setFormSettingsVal('siteUrl', e.target.value)} className={`${inputClass} !mb-0`} placeholder="https://glasswater.com" />
                   </div>
 
-                  {/* Contact Channels Section */}
                   <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray">
                     <h3 className="font-serif text-lg font-bold text-navy mb-4 flex items-center gap-2 border-b border-light-gray pb-2">
-                      <FileText size={18} className="text-gold" /> Contact Information
+                      <FileText size={18} className="text-gold" /> {t('admin.contact_info')}
                     </h3>
-
-                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Office Phone Number</label>
+                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.phone')}</label>
                     <input type="text" required value={localSettings.phone} onChange={e => setFormSettingsVal('phone', e.target.value)} className={inputClass} />
-
-                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">WhatsApp Direct Link</label>
+                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.whatsapp')}</label>
                     <input type="text" required value={localSettings.whatsapp} onChange={e => setFormSettingsVal('whatsapp', e.target.value)} className={inputClass} />
-                    <p className="text-[11px] text-steel-blue mt-[-10px] mb-4">Starts with <code>https://wa.me/</code> + digits (e.g., <code>https://wa.me/2330248284384</code>)</p>
-
-                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Enquiry Email Address</label>
+                    <p className="text-[11px] text-steel-blue mt-[-10px] mb-4">{t('admin.whatsapp_hint')}</p>
+                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.email')}</label>
                     <input type="email" required value={localSettings.email} onChange={e => setFormSettingsVal('email', e.target.value)} className={inputClass} />
-
-                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Physical Location Address</label>
+                    <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.address')}</label>
                     <textarea required rows={2} value={localSettings.address} onChange={e => setFormSettingsVal('address', e.target.value)} className={`${inputClass} resize-y`}></textarea>
                   </div>
                 </div>
 
-                {/* Payment Information Section */}
-                <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray mb-8">
+                <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray mb-6">
                   <h3 className="font-serif text-lg font-bold text-navy mb-4 flex items-center gap-2 border-b border-light-gray pb-2">
-                    <FileText size={18} className="text-gold" /> Default Payment Details
+                    <FileText size={18} className="text-gold" /> {t('admin.payment_details')}
                   </h3>
-                  <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Bank / Momo Details (Displayed on Estimates/Invoices)</label>
-                  <textarea rows={4} value={localSettings.paymentDetails || ''} onChange={e => setFormSettingsVal('paymentDetails', e.target.value)} className={`${inputClass} resize-y`} placeholder="Bank: Example Bank&#10;Account Name: Glasswater Fit-Outs&#10;Account Number: 1234567890&#10;Momo: 0248284384"></textarea>
+                  <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.payment_label')}</label>
+                  <textarea rows={4} value={localSettings.paymentDetails || ''} onChange={e => setFormSettingsVal('paymentDetails', e.target.value)} className={`${inputClass} resize-y`} placeholder={t('admin.payment_placeholder')}></textarea>
                 </div>
-                {/* Admin & Legal Section */}
-                <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray mb-8">
+
+                <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray mb-6">
                   <h3 className="font-serif text-lg font-bold text-navy mb-4 flex items-center gap-2 border-b border-light-gray pb-2">
-                    <FileText size={18} className="text-gold" /> Admin & Legal
+                    <FileText size={18} className="text-gold" /> {t('admin.social_channels')}
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Global Terms and Conditions</label>
-                      <textarea rows={6} value={localSettings.termsAndConditions || ''} onChange={e => setFormSettingsVal('termsAndConditions', e.target.value)} className={`${inputClass} resize-y`} placeholder="Enter terms and conditions..."></textarea>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Admin Login Password</label>
-                      <input type="password" value={localSettings.adminPassword || ''} onChange={e => setFormSettingsVal('adminPassword', e.target.value)} className={inputClass} placeholder="Enter new admin password" />
-                    </div>
-                  </div>
-                </div>
-                {/* Social Channels Section */}
-                <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray mb-8">
-                  <h3 className="font-serif text-lg font-bold text-navy mb-4 border-b border-light-gray pb-2">Social Channels Links</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Facebook Profile URL</label>
+                      <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.facebook')}</label>
                       <input type="text" required value={localSettings.facebook} onChange={e => setFormSettingsVal('facebook', e.target.value)} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Instagram Profile URL</label>
+                      <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.instagram')}</label>
                       <input type="text" required value={localSettings.instagram} onChange={e => setFormSettingsVal('instagram', e.target.value)} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">LinkedIn Company URL</label>
+                      <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.linkedin')}</label>
                       <input type="text" required value={localSettings.linkedin} onChange={e => setFormSettingsVal('linkedin', e.target.value)} className={inputClass} />
                     </div>
                   </div>
                 </div>
 
+                <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray mb-6">
+                  <h3 className="font-serif text-lg font-bold text-navy mb-4 flex items-center gap-2 border-b border-light-gray pb-2">
+                    <FileText size={18} className="text-gold" /> {t('admin.admin_legal')}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.terms')}</label>
+                      <textarea rows={6} value={localSettings.termsAndConditions || ''} onChange={e => setFormSettingsVal('termsAndConditions', e.target.value)} className={`${inputClass} resize-y`} placeholder={t('admin.terms_placeholder')}></textarea>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.admin_password')}</label>
+                      <input type="password" value={localSettings.adminPassword || ''} onChange={e => setFormSettingsVal('adminPassword', e.target.value)} className={inputClass} placeholder={t('admin.admin_password_placeholder')} />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex justify-end">
-                  <button type="submit" className="bg-gold text-white px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors shadow-custom cursor-pointer">
-                    Save Website Settings
+                  <button type="submit" disabled={isSavingSettings} className="bg-gold text-white px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors shadow-custom cursor-pointer disabled:opacity-50">
+                    {isSavingSettings ? <Loader size={16} className="animate-spin inline mr-2" /> : null}
+                    {isSavingSettings ? t('loading.saving') : t('admin.save_settings')}
                   </button>
                 </div>
               </form>
@@ -797,134 +762,120 @@ If you have any questions, please do not hesitate to contact us.
           {/* CLIENT DOCUMENTS TAB */}
           {activeTab === 'documents' && (
             <div>
-              {/* DOCUMENT EDITOR FORM */}
               {showDocForm && editingDoc ? (
                 <div>
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="font-serif text-2xl font-bold text-navy">
-                      {documents.some(d => d.code === editingDoc.code) ? 'Edit Document Details' : 'Create New Client Document'}
+                      {documents.some(d => d.code === editingDoc.code) ? t('admin.edit_doc') : t('admin.create_doc')}
                     </h2>
-                    <button 
+                    <button
                       type="button"
-                      onClick={() => { setShowDocForm(false); setEditingDoc(null); }} 
+                      onClick={() => { setShowDocForm(false); setEditingDoc(null); setDocErrors({}); }}
                       className="text-text-secondary hover:text-navy font-semibold uppercase tracking-widest text-sm transition-colors cursor-pointer"
                     >
-                      Cancel
+                      {t('admin.cancel')}
                     </button>
                   </div>
 
                   <form onSubmit={handleDocSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Reference Code (Sharing Code)</label>
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.ref_code_label')}</label>
                         <div className="flex gap-2">
-                          <input 
-                            type="text" 
-                            required 
+                          <input
+                            type="text"
                             disabled={documents.some(d => d.code === editingDoc.code)}
-                            placeholder="Enter Code" 
-                            value={editingDoc.code} 
-                            onChange={e => setEditingDoc({ ...editingDoc, code: e.target.value.toUpperCase().replace(/\s+/g, '') })} 
-                            className={`${inputClass} !mb-0 disabled:opacity-50 disabled:bg-gray-100`} 
+                            placeholder="Enter Code"
+                            value={editingDoc.code}
+                            onChange={e => setEditingDoc({ ...editingDoc, code: e.target.value.toUpperCase().replace(/\s+/g, '') })}
+                            className={docErrors.code ? errorInputClass : `${inputClass} !mb-0 disabled:opacity-50 disabled:bg-gray-100`}
                           />
                           {!documents.some(d => d.code === editingDoc.code) && (
-                            <button 
-                              type="button" 
-                              onClick={generateDocCode} 
-                              className="bg-gold/10 text-gold border border-gold px-3 rounded font-semibold text-xs uppercase tracking-wider hover:bg-gold hover:text-white transition-colors"
-                            >
-                              Generate
+                            <button type="button" onClick={generateDocCode} className="bg-gold/10 text-gold border border-gold px-3 rounded font-semibold text-xs uppercase tracking-wider hover:bg-gold hover:text-white transition-colors cursor-pointer">
+                              {t('admin.generate')}
                             </button>
                           )}
                         </div>
-                        <p className="text-[10px] text-steel-blue mt-1">This is the code clients will input to access this document.</p>
+                        {docErrors.code && <p className="text-xs text-red-600 mt-1">{docErrors.code}</p>}
+                        <p className="text-[10px] text-steel-blue mt-1">{t('admin.code_hint')}</p>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Document Type</label>
-                        <select 
-                          value={editingDoc.type} 
-                          onChange={e => setEditingDoc({ ...editingDoc, type: e.target.value as any })} 
-                          className={inputClass}
-                        >
-                          <option value="Estimate">Estimate</option>
-                          <option value="Waybill">Waybill</option>
-                          <option value="Invoice">Invoice</option>
-                          <option value="Receipt">Receipt</option>
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.doc_type')}</label>
+                        <select value={editingDoc.type} onChange={e => setEditingDoc({ ...editingDoc, type: e.target.value as any })} className={inputClass}>
+                          <option value="Estimate">{t('admin.estimate')}</option>
+                          <option value="Waybill">{t('admin.waybill')}</option>
+                          <option value="Invoice">{t('admin.invoice')}</option>
+                          <option value="Receipt">{t('admin.receipt')}</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Status</label>
-                        <select 
-                          value={editingDoc.status} 
-                          onChange={e => setEditingDoc({ ...editingDoc, status: e.target.value as any })} 
-                          className={inputClass}
-                        >
-                          <option value="Draft">Draft</option>
-                          <option value="Sent">Sent</option>
-                          <option value="Approved">Approved</option>
-                          <option value="Delivered">Delivered</option>
-                          <option value="Paid">Paid</option>
-                          <option value="Cancelled">Cancelled</option>
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.status')}</label>
+                        <select value={editingDoc.status} onChange={e => setEditingDoc({ ...editingDoc, status: e.target.value as any })} className={inputClass}>
+                          <option value="Draft">{t('admin.draft')}</option>
+                          <option value="Sent">{t('admin.sent')}</option>
+                          <option value="Approved">{t('admin.approved')}</option>
+                          <option value="Delivered">{t('admin.delivered')}</option>
+                          <option value="Paid">{t('admin.paid')}</option>
+                          <option value="Cancelled">{t('admin.cancelled')}</option>
                         </select>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Client Full Name</label>
-                        <input type="text" required value={editingDoc.clientName} onChange={e => setEditingDoc({ ...editingDoc, clientName: e.target.value })} className={inputClass} />
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.client_full_name')}</label>
+                        <input type="text" value={editingDoc.clientName} onChange={e => { setEditingDoc({ ...editingDoc, clientName: e.target.value }); setDocErrors({}); }} className={docErrors.clientName ? errorInputClass : inputClass} />
+                        {docErrors.clientName && <p className="text-xs text-red-600 mt-[-10px]">{docErrors.clientName}</p>}
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Client Email (Optional)</label>
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.client_email_opt')}</label>
                         <input type="email" value={editingDoc.clientEmail || ''} onChange={e => setEditingDoc({ ...editingDoc, clientEmail: e.target.value })} className={inputClass} />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Client Phone (Optional)</label>
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.client_phone_opt')}</label>
                         <input type="text" value={editingDoc.clientPhone || ''} onChange={e => setEditingDoc({ ...editingDoc, clientPhone: e.target.value })} className={inputClass} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="md:col-span-2">
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Project / Document Title</label>
-                        <input type="text" required placeholder="Enter Project Title" value={editingDoc.title} onChange={e => setEditingDoc({ ...editingDoc, title: e.target.value })} className={inputClass} />
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.project_title')}</label>
+                        <input type="text" placeholder="Enter Project Title" value={editingDoc.title} onChange={e => { setEditingDoc({ ...editingDoc, title: e.target.value }); setDocErrors({}); }} className={docErrors.title ? errorInputClass : inputClass} />
+                        {docErrors.title && <p className="text-xs text-red-600 mt-[-10px]">{docErrors.title}</p>}
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Issue Date</label>
-                        <input type="date" required value={editingDoc.date} onChange={e => setEditingDoc({ ...editingDoc, date: e.target.value })} className={inputClass} />
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.issue_date')}</label>
+                        <input type="date" value={editingDoc.date} onChange={e => setEditingDoc({ ...editingDoc, date: e.target.value })} className={inputClass} />
                       </div>
                     </div>
 
-                    {/* ITEMS breakdown dynamic table */}
                     <div className="bg-light-gray/20 p-6 rounded-lg border border-light-gray">
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="font-serif text-lg font-bold text-navy flex items-center gap-2">
-                          <PlusCircle size={18} className="text-gold" /> Line Items Breakdown
+                          <PlusCircle size={18} className="text-gold" /> {t('admin.line_items')}
                         </h3>
-                        <button 
-                          type="button" 
-                          onClick={handleAddDocItem} 
-                          className="bg-navy text-white text-xs font-semibold px-4 py-2 rounded uppercase tracking-widest hover:bg-gold transition-colors flex items-center gap-1"
-                        >
-                          <Plus size={14} /> Add Line Item
+                        <button type="button" onClick={handleAddDocItem} className="bg-navy text-white text-xs font-semibold px-4 py-2 rounded uppercase tracking-widest hover:bg-gold transition-colors flex items-center gap-1 cursor-pointer">
+                          <Plus size={14} /> {t('admin.add_line_item')}
                         </button>
                       </div>
 
+                      {docErrors.items && <p className="text-xs text-red-600 mb-3">{docErrors.items}</p>}
+
                       {editingDoc.items.length === 0 ? (
                         <div className="text-center py-8 bg-white rounded border border-dashed border-light-gray text-text-secondary text-sm">
-                          No line items added yet. Click "Add Line Item" to start building your pricing details.
+                          {t('admin.no_line_items')}
                         </div>
                       ) : (
                         <div className="overflow-x-auto">
-                          <table className="w-full text-left border-collapse bg-white rounded shadow-sm">
+                          <table className="w-full text-left border-collapse bg-white rounded shadow-sm min-w-[600px]">
                             <thead>
                               <tr className="bg-navy text-white text-[11px] uppercase tracking-widest">
-                                <th className="p-3">Description / Scope</th>
-                                <th className="p-3 w-24 text-center">Qty</th>
-                                <th className="p-3 w-36">Unit Price (GHS)</th>
-                                <th className="p-3 w-36 text-right">Total (GHS)</th>
+                                <th className="p-3">{t('admin.description_scope')}</th>
+                                <th className="p-3 w-20 text-center">{t('admin.qty')}</th>
+                                <th className="p-3 w-32">{t('admin.unit_price_ghs')}</th>
+                                <th className="p-3 w-32 text-right">{t('admin.total_ghs')}</th>
                                 <th className="p-3 w-16 text-center"></th>
                               </tr>
                             </thead>
@@ -932,47 +883,19 @@ If you have any questions, please do not hesitate to contact us.
                               {editingDoc.items.map((item) => (
                                 <tr key={item.id}>
                                   <td className="p-3">
-                                    <input 
-                                      type="text" 
-                                      required 
-                                      placeholder="Description" 
-                                      value={item.description} 
-                                      onChange={e => handleDocItemChange(item.id, 'description', e.target.value)} 
-                                      className="w-full bg-transparent border-b border-transparent focus:border-gold outline-none py-1"
-                                    />
+                                    <input type="text" placeholder="Description" value={item.description} onChange={e => handleDocItemChange(item.id, 'description', e.target.value)} className="w-full bg-transparent border-b border-transparent focus:border-gold outline-none py-1 min-w-[120px]" />
                                   </td>
                                   <td className="p-3">
-                                    <input 
-                                      type="number" 
-                                      min="1" 
-                                      required 
-                                      value={item.quantity} 
-                                      onChange={e => handleDocItemChange(item.id, 'quantity', e.target.value)} 
-                                      className="w-full text-center bg-transparent border-b border-transparent focus:border-gold outline-none py-1"
-                                    />
+                                    <input type="number" min="1" value={item.quantity} onChange={e => handleDocItemChange(item.id, 'quantity', e.target.value)} className="w-full text-center bg-transparent border-b border-transparent focus:border-gold outline-none py-1 min-w-[50px]" />
                                   </td>
                                   <td className="p-3">
-                                    <input 
-                                      type="number" 
-                                      min="0" 
-                                      step="0.01" 
-                                      required 
-                                      placeholder="0.00" 
-                                      value={item.unitPrice || ''} 
-                                      onChange={e => handleDocItemChange(item.id, 'unitPrice', e.target.value)} 
-                                      className="w-full bg-transparent border-b border-transparent focus:border-gold outline-none py-1"
-                                    />
+                                    <input type="number" min="0" step="0.01" placeholder="0.00" value={item.unitPrice || ''} onChange={e => handleDocItemChange(item.id, 'unitPrice', e.target.value)} className="w-full bg-transparent border-b border-transparent focus:border-gold outline-none py-1 min-w-[80px]" />
                                   </td>
                                   <td className="p-3 text-right font-semibold text-navy">
                                     GHS {Number(item.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                   </td>
                                   <td className="p-3 text-center">
-                                    <button 
-                                      type="button" 
-                                      onClick={() => handleRemoveDocItem(item.id)} 
-                                      className="text-red-500 hover:text-red-700 transition-colors cursor-pointer"
-                                      title="Remove item"
-                                    >
+                                    <button type="button" onClick={() => handleRemoveDocItem(item.id)} className="text-red-500 hover:text-red-700 transition-colors cursor-pointer" title="Remove item">
                                       <Trash size={16} />
                                     </button>
                                   </td>
@@ -981,7 +904,7 @@ If you have any questions, please do not hesitate to contact us.
                             </tbody>
                             <tfoot>
                               <tr className="bg-light-gray/30 font-bold text-navy text-base">
-                                <td colSpan={3} className="p-4 text-right">Estimated/Total Value:</td>
+                                <td colSpan={3} className="p-4 text-right">{t('admin.estimated_total')}</td>
                                 <td className="p-4 text-right text-gold">
                                   GHS {Number(editingDoc.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
@@ -995,115 +918,85 @@ If you have any questions, please do not hesitate to contact us.
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                       <div>
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Discount Type</label>
-                        <select 
-                          value={editingDoc.discountType || ''}
-                          onChange={e => handleDocDiscountChange('discountType', e.target.value)}
-                          className={inputClass}
-                        >
-                          <option value="">None</option>
-                          <option value="fixed">Fixed Amount (GHS)</option>
-                          <option value="percentage">Percentage (%)</option>
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.discount_type')}</label>
+                        <select value={editingDoc.discountType || ''} onChange={e => handleDocDiscountChange('discountType', e.target.value)} className={inputClass}>
+                          <option value="">{t('admin.none')}</option>
+                          <option value="fixed">{t('admin.fixed_amount')}</option>
+                          <option value="percentage">{t('admin.percentage')}</option>
                         </select>
+                        {docErrors.discount && <p className="text-xs text-red-600 mt-[-10px]">{docErrors.discount}</p>}
                       </div>
-                      
+
                       {editingDoc.discountType && (
                         <div>
-                          <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Discount Value</label>
-                          <input 
-                            type="number" 
-                            min="0"
-                            step="0.01"
-                            value={editingDoc.discountValue || ''}
-                            onChange={e => handleDocDiscountChange('discountValue', e.target.value)}
-                            className={inputClass}
-                            placeholder={editingDoc.discountType === 'percentage' ? "10" : "500"}
-                          />
+                          <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.discount_value')}</label>
+                          <input type="number" min="0" step="0.01" value={editingDoc.discountValue || ''} onChange={e => handleDocDiscountChange('discountValue', e.target.value)} className={inputClass} placeholder={editingDoc.discountType === 'percentage' ? "10" : "500"} />
                         </div>
                       )}
-                      
+
                       <div className="flex items-center">
                         <label className="flex items-center gap-3 cursor-pointer md:mt-4">
-                          <input 
-                            type="checkbox" 
-                            checked={!!editingDoc.includePaymentDetails}
-                            onChange={e => setEditingDoc({ ...editingDoc, includePaymentDetails: e.target.checked })}
-                            className="w-5 h-5 accent-gold cursor-pointer"
-                          />
-                          <span className="text-sm font-semibold text-navy uppercase tracking-widest">Attach Payment Details</span>
+                          <input type="checkbox" checked={!!editingDoc.includePaymentDetails} onChange={e => setEditingDoc({ ...editingDoc, includePaymentDetails: e.target.checked })} className="w-5 h-5 accent-gold cursor-pointer" />
+                          <span className="text-sm font-semibold text-navy uppercase tracking-widest">{t('admin.attach_payment')}</span>
                         </label>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Notes / Payment Terms / Instructions</label>
-                        <textarea rows={3} placeholder="Provide payment instructions or validity period for estimates." value={editingDoc.notes || ''} onChange={e => setEditingDoc({ ...editingDoc, notes: e.target.value })} className={`${inputClass} resize-y`}></textarea>
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.notes_label')}</label>
+                        <textarea rows={3} placeholder={t('admin.notes_placeholder')} value={editingDoc.notes || ''} onChange={e => setEditingDoc({ ...editingDoc, notes: e.target.value })} className={`${inputClass} resize-y`}></textarea>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Attached File Link (Optional - e.g. Google Drive PDF)</label>
-                        <input type="text" placeholder="https://drive.google.com/file/d/.../view" value={editingDoc.fileUrl || ''} onChange={e => setEditingDoc({ ...editingDoc, fileUrl: e.target.value })} className={inputClass} />
+                        <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('admin.file_link')}</label>
+                        <input type="text" placeholder={t('admin.file_placeholder')} value={editingDoc.fileUrl || ''} onChange={e => setEditingDoc({ ...editingDoc, fileUrl: e.target.value })} className={inputClass} />
                         <div className="p-3 bg-blue-50 text-blue-700 border border-blue-100 rounded text-xs flex gap-2">
                           <Info size={16} className="shrink-0 mt-0.5" />
-                          <span>Clients will be able to download their physical estimate/bill if you attach a link.</span>
+                          <span>{t('admin.file_hint')}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex justify-end gap-4 border-t border-light-gray pt-6">
-                      <button 
-                        type="button" 
-                        onClick={() => { setShowDocForm(false); setEditingDoc(null); }} 
-                        className="bg-transparent border border-light-gray text-text-secondary px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-gray-100 transition-colors cursor-pointer"
-                      >
-                        Cancel
+                      <button type="button" onClick={() => { setShowDocForm(false); setEditingDoc(null); setDocErrors({}); }} className="bg-transparent border border-light-gray text-text-secondary px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-gray-100 transition-colors cursor-pointer">
+                        {t('admin.cancel')}
                       </button>
-                      <button 
-                        type="submit" 
-                        className="bg-gold text-white px-10 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors shadow-custom cursor-pointer"
-                      >
-                        Save Client Document
+                      <button type="submit" disabled={isSavingDoc} className="bg-gold text-white px-10 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors shadow-custom cursor-pointer disabled:opacity-50">
+                        {isSavingDoc ? <Loader size={16} className="animate-spin inline mr-2" /> : null}
+                        {isSavingDoc ? t('loading.saving') : t('admin.save_doc')}
                       </button>
                     </div>
                   </form>
                 </div>
               ) : (
-                /* DOCUMENTS LISTING VIEWS */
                 <div>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                     <h2 className="font-serif text-2xl font-bold text-navy flex items-center gap-2">
-                      <FileText size={22} className="text-gold" /> Client Waybills & Estimates ({documents.length})
+                      <FileText size={22} className="text-gold" /> {t('admin.documents_title')} ({documents.length})
                     </h2>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => {
                         setEditingDoc({
-                          code: '',
-                          clientName: '',
-                          clientEmail: '',
-                          clientPhone: '',
-                          title: '',
-                          type: 'Estimate',
-                          status: 'Draft',
+                          code: '', clientName: '', clientEmail: '', clientPhone: '',
+                          title: '', type: 'Estimate', status: 'Draft',
                           date: new Date().toISOString().split('T')[0],
-                          items: [],
-                          notes: '',
-                          totalAmount: 0
+                          items: [], notes: '', totalAmount: 0
                         });
                         setShowDocForm(true);
+                        setDocErrors({});
                       }}
                       className="bg-gold text-white px-6 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors flex items-center gap-2 self-start sm:self-auto cursor-pointer"
                     >
-                      <Plus size={18} /> New Document
+                      <Plus size={18} /> {t('admin.new_document')}
                     </button>
                   </div>
 
-                  {/* Saved document message box */}
                   {docSaveMessage && (
                     <div className="mb-6 p-5 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center gap-2 mb-3">
                         <Check className="text-green-600" size={18} />
-                        <span className="font-semibold text-green-800 text-sm uppercase tracking-wider">Document Saved — Share This Message</span>
+                        <span className="font-semibold text-green-800 text-sm uppercase tracking-wider">{t('admin.doc_saved')}</span>
                       </div>
                       <div className="bg-white border border-green-100 rounded p-4 text-sm text-navy whitespace-pre-line font-sans leading-relaxed mb-3">
                         {docSaveMessage}
@@ -1113,58 +1006,51 @@ If you have any questions, please do not hesitate to contact us.
                           type="button"
                           onClick={() => {
                             navigator.clipboard.writeText(docSaveMessage);
-                            alert('Message copied to clipboard.');
+                            addToast('success', t('toast.message_copied'), 3000);
                           }}
                           className="bg-navy text-white px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider hover:bg-gold transition-colors flex items-center gap-2 cursor-pointer"
                         >
-                          <Copy size={14} /> Copy Message
+                          <Copy size={14} /> {t('admin.copy_message')}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setDocSaveMessage(null)}
-                          className="border border-light-gray text-text-secondary px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider hover:bg-gray-100 transition-colors cursor-pointer"
-                        >
-                          Dismiss
+                        <button type="button" onClick={() => setDocSaveMessage(null)} className="border border-light-gray text-text-secondary px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider hover:bg-gray-100 transition-colors cursor-pointer">
+                          {t('admin.dismiss')}
                         </button>
                       </div>
                     </div>
                   )}
 
-                  {/* Search Bar filter */}
                   <div className="mb-6">
-                    <input 
-                      type="text" 
-                      placeholder="Search documents by code, client name, or project title..." 
+                    <input
+                      type="text"
+                      placeholder={t('admin.search_docs')}
                       value={searchDocQuery}
                       onChange={e => setSearchDocQuery(e.target.value)}
                       className="w-full max-w-xl p-3 border border-light-gray rounded font-sans text-base focus:outline-none focus:border-gold bg-bg-body text-text-primary transition-all"
                     />
                   </div>
 
-                  {documents.filter(doc => 
+                  {documents.filter(doc =>
                     doc.code.toLowerCase().includes(searchDocQuery.toLowerCase()) ||
                     doc.clientName.toLowerCase().includes(searchDocQuery.toLowerCase()) ||
                     doc.title.toLowerCase().includes(searchDocQuery.toLowerCase())
                   ).length === 0 ? (
-                    <div className="text-center py-12 text-text-secondary">
-                      No matching estimates, waybills, or invoices found.
-                    </div>
+                    <div className="text-center py-12 text-text-secondary">{t('admin.no_docs')}</div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
                           <tr className="bg-light-gray text-navy text-[11px] uppercase tracking-widest font-bold">
-                            <th className="p-4">Reference Code</th>
-                            <th className="p-4">Client Name</th>
-                            <th className="p-4">Document Title</th>
-                            <th className="p-4 text-center">Type</th>
-                            <th className="p-4 text-center">Status</th>
-                            <th className="p-4 text-right">Total Amount</th>
-                            <th className="p-4 text-center">Actions</th>
+                            <th className="p-4">{t('admin.ref_code')}</th>
+                            <th className="p-4">{t('admin.client_name')}</th>
+                            <th className="p-4">{t('admin.doc_title')}</th>
+                            <th className="p-4 text-center">{t('admin.type')}</th>
+                            <th className="p-4 text-center">{t('admin.status')}</th>
+                            <th className="p-4 text-right">{t('admin.total_amount')}</th>
+                            <th className="p-4 text-center">{t('admin.actions')}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-light-gray text-sm text-text-primary">
-                          {documents.filter(doc => 
+                          {documents.filter(doc =>
                             doc.code.toLowerCase().includes(searchDocQuery.toLowerCase()) ||
                             doc.clientName.toLowerCase().includes(searchDocQuery.toLowerCase()) ||
                             doc.title.toLowerCase().includes(searchDocQuery.toLowerCase())
@@ -1175,20 +1061,18 @@ If you have any questions, please do not hesitate to contact us.
                               </td>
                               <td className="p-4 font-semibold">
                                 <div>{doc.clientName}</div>
-                                <div className="text-xs text-text-secondary font-normal">{doc.clientPhone || doc.clientEmail || 'No contact details'}</div>
+                                <div className="text-xs text-text-secondary font-normal">{doc.clientPhone || doc.clientEmail || t('admin.no_contact')}</div>
                               </td>
                               <td className="p-4 max-w-xs truncate" title={doc.title}>
                                 {doc.title}
-                                <div className="text-[11px] text-text-secondary font-normal mt-0.5">Issued: {doc.date}</div>
+                                <div className="text-[11px] text-text-secondary font-normal mt-0.5">{t('admin.issued')} {doc.date}</div>
                               </td>
                               <td className="p-4 text-center">
                                 <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                                   doc.type === 'Estimate' ? 'bg-yellow-100 text-yellow-800' :
                                   doc.type === 'Waybill' ? 'bg-blue-100 text-blue-800' :
                                   'bg-green-100 text-green-800'
-                                }`}>
-                                  {doc.type}
-                                </span>
+                                }`}>{doc.type}</span>
                               </td>
                               <td className="p-4 text-center">
                                 <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
@@ -1197,61 +1081,64 @@ If you have any questions, please do not hesitate to contact us.
                                   doc.status === 'Draft' ? 'bg-gray-100 text-gray-800' :
                                   doc.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
                                   'bg-amber-100 text-amber-800'
-                                }`}>
-                                  {doc.status}
-                                </span>
+                                }`}>{doc.status}</span>
                               </td>
                               <td className="p-4 text-right font-bold text-navy">
                                 GHS {doc.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td className="p-4">
-                                <div className="flex items-center justify-center gap-3">
-                                  {/* Copy Code Button with success visual */}
-                                  <button 
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
                                     type="button"
                                     onClick={() => {
                                       navigator.clipboard.writeText(doc.code);
                                       setCopyCodeSuccess(doc.code);
+                                      addToast('success', t('toast.code_copied'), 2000);
                                       setTimeout(() => setCopyCodeSuccess(null), 2000);
                                     }}
                                     className="p-1.5 hover:bg-gold/10 rounded text-gold transition-all relative flex items-center gap-1 cursor-pointer"
-                                    title="Copy reference code for client"
+                                    title="Copy reference code"
                                   >
                                     {copyCodeSuccess === doc.code ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
-                                    <span className="text-[10px] font-semibold uppercase tracking-wider hidden sm:inline">Code</span>
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider hidden sm:inline">{t('admin.code')}</span>
                                   </button>
 
-                                  <button 
+                                  <button
                                     type="button"
                                     onClick={() => {
-                                      window.location.hash = `#portal?code=${doc.code}`;
+                                      // Navigate to portal with code, preserving the hash format
+                                      const codeUrl = `#portal?code=${doc.code}`;
+                                      window.location.hash = codeUrl;
                                     }}
                                     className="p-1.5 hover:bg-navy/10 rounded text-navy transition-all cursor-pointer"
-                                    title="View & Download PDF"
+                                    title="View & Download"
                                   >
-                                    <Download size={16} />
+                                    <Eye size={16} />
                                   </button>
-                                  <button 
+
+                                  <button
                                     type="button"
                                     onClick={() => {
                                       setEditingDoc({ ...doc });
                                       setShowDocForm(true);
+                                      setDocErrors({});
                                     }}
                                     className="p-1.5 hover:bg-navy/10 rounded text-navy transition-all cursor-pointer"
-                                    title="Edit details"
+                                    title="Edit"
                                   >
                                     <Edit size={16} />
                                   </button>
 
-                                  <button 
+                                  <button
                                     type="button"
                                     onClick={() => {
-                                      if (confirm(`Are you sure you want to delete client document ${doc.code}?`)) {
+                                      if (confirm(`${t('admin.delete_doc_confirm')} ${doc.code}?`)) {
                                         deleteDocument(doc.code);
+                                        addToast('success', t('toast.doc_deleted'), 3000);
                                       }
                                     }}
                                     className="p-1.5 hover:bg-red-50 rounded text-red-500 hover:text-red-700 transition-all cursor-pointer"
-                                    title="Delete document"
+                                    title="Delete"
                                   >
                                     <Trash size={16} />
                                   </button>

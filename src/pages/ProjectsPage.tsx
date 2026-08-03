@@ -1,8 +1,66 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import type { Key } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { getProjects } from '../data';
 import { ArrowRight } from 'lucide-react';
 import { safeCssUrl } from '../utils/safeCssUrl';
+
+type ProjectData = { id: string; title: string; category: string; description: string; image: string; desc?: string; value?: string; duration?: string; [key: string]: unknown };
+
+/** Card sub-component — uses IntersectionObserver to lazy-load its background image */
+function ProjectCard({ p }: { key?: Key; p: ProjectData }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [bgUrl, setBgUrl] = useState('');
+  const { t } = useI18n();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !p.image) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setBgUrl(p.image);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [p.image]);
+
+  return (
+    <div className="bg-white rounded-lg overflow-hidden shadow-custom hover:-translate-y-2 transition-all cursor-pointer group">
+      <div
+        ref={ref}
+        className="h-72 md:h-96 bg-cover bg-center transition-transform duration-700 group-hover:scale-105 bg-light-gray"
+        style={bgUrl ? { backgroundImage: `url('${safeCssUrl(bgUrl)}')` } : undefined}
+      />
+      <div className="p-10 relative bg-white z-10">
+        <div className="text-sm uppercase tracking-widest text-gold font-semibold mb-4 flex items-center gap-2">
+          <span className="w-8 h-[1px] bg-gold"></span>
+          {p.category}
+        </div>
+        <h3 className="font-serif text-2xl font-bold text-navy mb-4 group-hover:text-gold transition-colors">{p.title}</h3>
+        <p className="text-text-secondary leading-relaxed mb-8">{p.desc ?? (p as any).description}</p>
+
+        <div className="grid grid-cols-2 gap-6 pt-8 border-t border-light-gray/50 mb-8">
+          <div>
+            <div className="text-xs uppercase tracking-widest text-text-secondary mb-1">{t('projects.value')}</div>
+            <div className="font-bold text-navy">{p.value ?? '—'}</div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-widest text-text-secondary mb-1">{t('projects.duration')}</div>
+            <div className="font-bold text-navy">{p.duration ?? '—'}</div>
+          </div>
+        </div>
+        <div className="flex items-center text-gold font-semibold uppercase tracking-widest text-sm group-hover:translate-x-2 transition-transform">
+          View Case Study <ArrowRight size={16} className="ml-2" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ProjectsPage() {
   const { t, lang } = useI18n();
@@ -12,8 +70,8 @@ export function ProjectsPage() {
     const saved = localStorage.getItem('glasswater_projects');
     if (saved) {
       try {
-        const parsed = JSON.parse(saved); setProjects([...parsed, ...getProjects(lang).filter(p => !parsed.find(op => op.id === p.id))]);
-      } catch (e) { console.error('Failed to load glasswater_projects from localStorage:', e); }
+        const parsed = JSON.parse(saved); setProjects([...parsed, ...getProjects(lang).filter(p => !parsed.find((op: any) => op.id === p.id))]);
+      } catch (e) { console.error('Failed to load projects from localStorage:', e); }
     }
   }, [lang]);
 
@@ -26,38 +84,11 @@ export function ProjectsPage() {
             <h1 className="font-serif text-5xl sm:text-6xl font-bold text-navy mb-6 md:mb-8">{t('projects.title')}</h1>
             <p className="text-xl text-text-secondary leading-relaxed">{t('projects.sub')}</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
-          {projects.map(p => (
-            <div key={p.id} className="bg-white rounded-lg overflow-hidden shadow-custom hover:-translate-y-2 transition-all cursor-pointer group">
-              <div 
-                className="h-72 md:h-96 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                style={{ backgroundImage: `url('${safeCssUrl(p.image)}')` }}
-              />
-              <div className="p-10 relative bg-white z-10">
-                <div className="text-sm uppercase tracking-widest text-gold font-semibold mb-4 flex items-center gap-2">
-                  <span className="w-8 h-[1px] bg-gold"></span>
-                  {p.category}
-                </div>
-                <h3 className="font-serif text-2xl font-bold text-navy mb-4 group-hover:text-gold transition-colors">{p.title}</h3>
-                <p className="text-text-secondary leading-relaxed mb-8">{p.desc}</p>
-                
-                <div className="grid grid-cols-2 gap-6 pt-8 border-t border-light-gray/50 mb-8">
-                  <div>
-                    <div className="text-xs uppercase tracking-widest text-text-secondary mb-1">{t('projects.value')}</div>
-                    <div className="font-bold text-navy">{p.value}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs uppercase tracking-widest text-text-secondary mb-1">{t('projects.duration')}</div>
-                    <div className="font-bold text-navy">{p.duration}</div>
-                  </div>
-                </div>
-                <div className="flex items-center text-gold font-semibold uppercase tracking-widest text-sm group-hover:translate-x-2 transition-transform">
-                  View Case Study <ArrowRight size={16} className="ml-2" />
-                </div>
-              </div>
-            </div>
-          ))}
+            {projects.map(p => (
+              <ProjectCard key={p.id} p={p as ProjectData} />
+            ))}
           </div>
         </div>
       </section>

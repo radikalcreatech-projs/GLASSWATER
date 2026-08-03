@@ -5,8 +5,13 @@ import { useSettings } from '../context/SettingsContext';
 
 export function Footer() {
   const { t } = useI18n();
-  const { navigate } = useNavigation();
+  const { navigate, isTransitioning } = useNavigation();
   const { settings } = useSettings();
+
+  const handleNav = (page: Parameters<typeof navigate>[0]) => {
+    if (isTransitioning) return;
+    navigate(page);
+  };
 
   return (
     <footer className="bg-navy text-light-gray py-6 md:py-8 print:hidden">
@@ -29,12 +34,12 @@ export function Footer() {
         <div className="hidden md:block col-span-1">
           <h4 className="text-white font-sans font-semibold mb-4 tracking-widest uppercase text-xs">{t('footer.links')}</h4>
           <ul className="space-y-2 text-xs">
-            <li><button onClick={() => navigate('home')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.home')}</button></li>
-            <li><button onClick={() => navigate('about')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.about')}</button></li>
-            <li><button onClick={() => navigate('services')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.services')}</button></li>
-            <li><button onClick={() => navigate('projects')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.projects')}</button></li>
-            <li><button onClick={() => navigate('insights')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.insights')}</button></li>
-            <li><button onClick={() => navigate('contact')} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem]">{t('nav.contact')}</button></li>
+            <li><button onClick={() => handleNav('home')} disabled={isTransitioning} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem] disabled:opacity-50">{t('nav.home')}</button></li>
+            <li><button onClick={() => handleNav('about')} disabled={isTransitioning} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem] disabled:opacity-50">{t('nav.about')}</button></li>
+            <li><button onClick={() => handleNav('services')} disabled={isTransitioning} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem] disabled:opacity-50">{t('nav.services')}</button></li>
+            <li><button onClick={() => handleNav('projects')} disabled={isTransitioning} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem] disabled:opacity-50">{t('nav.projects')}</button></li>
+            <li><button onClick={() => handleNav('insights')} disabled={isTransitioning} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem] disabled:opacity-50">{t('nav.insights')}</button></li>
+            <li><button onClick={() => handleNav('contact')} disabled={isTransitioning} className="text-light-gray/70 hover:text-gold transition-colors uppercase tracking-widest text-[0.65rem] disabled:opacity-50">{t('nav.contact')}</button></li>
           </ul>
         </div>
         

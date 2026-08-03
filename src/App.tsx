@@ -3,50 +3,68 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { SearchModal } from './components/SearchModal';
 import { WizardModal } from './components/WizardModal';
+import { ToastContainer } from './components/ToastContainer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import { I18nProvider, useI18n } from './context/I18nContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
+import { ToastProvider } from './context/ToastContext';
 import { MessageCircle, FileText } from 'lucide-react';
-import { useState, useEffect } from 'react';
 import { sanitizeWhatsAppUrl } from './utils/url';
 
-// Import Pages
-import { HomePage } from './pages/HomePage';
-import { AboutPage } from './pages/AboutPage';
-import { ServicesPage } from './pages/ServicesPage';
-import { ProjectsPage } from './pages/ProjectsPage';
-import { InsightsPage } from './pages/InsightsPage';
-import { FAQPage } from './pages/FAQPage';
-import { ReviewsPage } from './pages/ReviewsPage';
-import { ContactPage } from './pages/ContactPage';
-import { CareersPage } from './pages/CareersPage';
-import { PortalPage } from './pages/PortalPage';
-import { PostPage } from './pages/PostPage';
-import { AdminPage } from './pages/AdminPage';
+// --- Lazy-loaded Pages (each becomes its own async chunk) ---
+const HomePage     = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
+const AboutPage    = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const ServicesPage = lazy(() => import('./pages/ServicesPage').then(m => ({ default: m.ServicesPage })));
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then(m => ({ default: m.ProjectsPage })));
+const InsightsPage = lazy(() => import('./pages/InsightsPage').then(m => ({ default: m.InsightsPage })));
+const FAQPage      = lazy(() => import('./pages/FAQPage').then(m => ({ default: m.FAQPage })));
+const ReviewsPage  = lazy(() => import('./pages/ReviewsPage').then(m => ({ default: m.ReviewsPage })));
+const ContactPage  = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })));
+const CareersPage  = lazy(() => import('./pages/CareersPage').then(m => ({ default: m.CareersPage })));
+const PortalPage   = lazy(() => import('./pages/PortalPage').then(m => ({ default: m.PortalPage })));
+const PostPage     = lazy(() => import('./pages/PostPage').then(m => ({ default: m.PostPage })));
+const AdminPage    = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
+
+/** Minimal spinner shown while a lazy page chunk is loading */
+function PageSkeleton() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="w-12 h-12 rounded-full border-4 border-gold border-t-transparent animate-spin" />
+    </div>
+  );
+}
 
 function PageRenderer({ onOpenWizard }: { onOpenWizard: () => void }) {
   const { currentPage } = useNavigation();
 
-  switch (currentPage) {
-    case 'home': return <HomePage onOpenWizard={onOpenWizard} />;
-    case 'about': return <AboutPage />;
-    case 'services': return <ServicesPage />;
-    case 'projects': return <ProjectsPage />;
-    case 'insights': return <InsightsPage />;
-    case 'contact': return <ContactPage />;
-    case 'portal': return <PortalPage />;
-    case 'post': return <PostPage />;
-    // We removed these from the header for simplicity, but they are still routable
-    case 'faq': return <FAQPage />;
-    case 'reviews': return <ReviewsPage />;
-    case 'careers': return <CareersPage />;
-    case 'admin': return <AdminPage />;
-    default: return <HomePage onOpenWizard={onOpenWizard} />;
-  }
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      {(() => {
+        switch (currentPage) {
+          case 'home':     return <HomePage onOpenWizard={onOpenWizard} />;
+          case 'about':    return <AboutPage />;
+          case 'services': return <ServicesPage />;
+          case 'projects': return <ProjectsPage />;
+          case 'insights': return <InsightsPage />;
+          case 'contact':  return <ContactPage />;
+          case 'portal':   return <PortalPage />;
+          case 'post':     return <PostPage />;
+          // Still routable even if not in the header
+          case 'faq':      return <FAQPage />;
+          case 'reviews':  return <ReviewsPage />;
+          case 'careers':  return <CareersPage />;
+          case 'admin':    return <AdminPage />;
+          default:         return <HomePage onOpenWizard={onOpenWizard} />;
+        }
+      })()}
+    </Suspense>
+  );
 }
 
 function MainApp() {
@@ -63,7 +81,7 @@ function MainApp() {
         const k = localStorage.key(i);
         if (k) keys.push(k);
       }
-      
+
       for (const key of keys) {
         if (key && key.startsWith('glasswater_')) {
           let val = localStorage.getItem(key);
@@ -88,7 +106,7 @@ function MainApp() {
               if (match.includes('pipes')) return 'https://lh3.googleusercontent.com/d/12t2BvS2Yw52abLkC9cHlaEkLlhFf020p';
               return match;
             });
-            
+
             localStorage.setItem(key, val);
           }
         }
@@ -101,18 +119,18 @@ function MainApp() {
   return (
     <div className="min-h-screen bg-bg-body flex flex-col font-sans">
       <Header onOpenSearch={() => setIsSearchOpen(true)} onOpenWizard={() => setIsWizardOpen(true)} />
-      
+
       <main className="flex-1 mt-[54px] sm:mt-[70px] md:mt-[80px] print:mt-0">
         <PageRenderer onOpenWizard={() => setIsWizardOpen(true)} />
       </main>
-      
+
       <Footer />
-      
+
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <WizardModal isOpen={isWizardOpen} onClose={() => setIsWizardOpen(false)} />
 
       {/* Floating Action Buttons */}
-      <button 
+      <button
         onClick={() => setIsWizardOpen(true)}
         className="fixed bottom-[90px] md:bottom-[100px] right-4 md:right-6 bg-gold text-white px-4 py-2.5 md:px-6 md:py-4 rounded-full font-semibold shadow-custom hover:scale-105 hover:bg-navy transition-all z-50 flex items-center gap-2 md:gap-3 print:hidden"
       >
@@ -134,13 +152,17 @@ function MainApp() {
 
 export default function App() {
   return (
-    <I18nProvider>
-      <SettingsProvider>
-        <NavigationProvider>
-          <MainApp />
-        </NavigationProvider>
-      </SettingsProvider>
-    </I18nProvider>
+    <ErrorBoundary>
+      <I18nProvider>
+        <SettingsProvider>
+          <NavigationProvider>
+            <ToastProvider>
+              <MainApp />
+              <ToastContainer />
+            </ToastProvider>
+          </NavigationProvider>
+        </SettingsProvider>
+      </I18nProvider>
+    </ErrorBoundary>
   );
 }
-

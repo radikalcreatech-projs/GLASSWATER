@@ -48,6 +48,140 @@ body {
   box-shadow: 0 8px 30px rgba(0,0,0,0.06);
 }
 
+/* ── Print Styles for Document/Estimate Pages ────────────────── */
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body {
+    background: white !important;
+    color: #000 !important;
+  }
+
+  header, footer, nav, [class*="print:hidden"],
+  .fixed, [class*="ToastContainer"],
+  [class*="LoadingSpinner"] {
+    display: none !important;
+  }
+
+  main {
+    margin-top: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Override Tailwind print variant utilities for document printing */
+  [class*="print:border-none"] { border: none !important; }
+  [class*="print:shadow-none"] { box-shadow: none !important; }
+  [class*="print:p-0"] { padding: 0 !important; }
+  [class*="print:px-0"] { padding-left: 0 !important; padding-right: 0 !important; }
+  [class*="print:py-0"] { padding-top: 0 !important; padding-bottom: 0 !important; }
+  [class*="print:mt-0"] { margin-top: 0 !important; }
+  [class*="print:flex-row"] { flex-direction: row !important; }
+  [class*="print:grid-cols-2"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  [class*="print:overflow-visible"] { overflow: visible !important; }
+
+  #printable-document,
+  [id*="printable"] {
+    max-width: 100% !important;
+  }
+}
+
+/* ── Toast Animations ────────────────────────────────────────── */
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-toast-in {
+  animation: toast-slide-in 0.3s ease-out;
+}
+
+/* ── Button Utility Classes ──────────────────────────────────── */
+
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* ── Responsive Spacing Utilities ────────────────────────────── */
+
+@media (max-width: 768px) {
+  .section-py {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .section-py {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+}
+
+/* ── Reduced Motion ──────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Field Validation Styles ─────────────────────────────────── */
+
+.input-error {
+  border-color: #EF4444 !important;
+  ring-color: #EF4444 !important;
+}
+
+.input-error:focus {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 1px #EF4444 !important;
+}
+
 
 @keyframes fadeInSlideUp {
   from {

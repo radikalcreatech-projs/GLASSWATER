@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, Search, Moon, Sun, Globe } from 'lucide-react';
+import { Menu, X, Search } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
 import { useNavigation, Page } from '../context/NavigationContext';
 import { useSettings } from '../context/SettingsContext';
@@ -7,8 +7,14 @@ import { useSettings } from '../context/SettingsContext';
 export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => void; onOpenWizard: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const { t, lang, setLang } = useI18n();
-  const { currentPage, navigate } = useNavigation();
+  const { currentPage, navigate, isTransitioning } = useNavigation();
   const { settings } = useSettings();
+
+  const handleNav = (page: Page) => {
+    if (isTransitioning) return;
+    navigate(page);
+    setIsOpen(false);
+  };
 
   const navLinks: { page: Page; key: string }[] = [
     { page: 'home', key: 'nav.home' },
@@ -67,15 +73,17 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
           {navLinks.map((link) => (
             <button
               key={link.page}
-              onClick={() => navigate(link.page)}
+              onClick={() => handleNav(link.page)}
+              disabled={isTransitioning}
               className={`font-sans font-semibold text-[0.8rem] uppercase tracking-widest whitespace-nowrap transition-colors ${currentPage === link.page ? 'text-gold' : 'text-text-primary hover:text-gold'}`}
             >
               {t(link.key)}
             </button>
           ))}
-          <button 
-            onClick={() => navigate('portal')}
-            className="bg-gold text-white px-6 py-2.5 rounded font-semibold hover:bg-navy transition-colors ml-4 uppercase tracking-widest text-[0.75rem] md:text-sm"
+            <button 
+              onClick={() => handleNav('portal')}
+              disabled={isTransitioning}
+              className="bg-gold text-white px-6 py-2.5 rounded font-semibold hover:bg-navy transition-colors ml-4 uppercase tracking-widest text-[0.75rem] md:text-sm disabled:opacity-50"
           >
             {t('nav.portal')}
           </button>
@@ -89,26 +97,23 @@ export function Header({ onOpenSearch, onOpenWizard }: { onOpenSearch: () => voi
             <button
               key={link.page}
               className={`font-sans font-semibold text-left uppercase tracking-widest text-[0.7rem] sm:text-[0.75rem] ${currentPage === link.page ? 'text-gold' : 'text-text-primary hover:text-gold'}`}
-              onClick={() => {
-                navigate(link.page);
-                setIsOpen(false);
-              }}
+              onClick={() => handleNav(link.page)}
+              disabled={isTransitioning}
             >
               {t(link.key)}
             </button>
           ))}
           <div className="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-gray-100">
             <button
-              onClick={() => {
-                navigate('portal');
-                setIsOpen(false);
-              }}
+              onClick={() => handleNav('portal')}
+              disabled={isTransitioning}
               className="bg-navy text-white py-2.5 rounded font-semibold hover:bg-gold transition-colors text-center uppercase tracking-widest text-[0.65rem] sm:text-xs"
             >
               {t('nav.portal')}
             </button>
             <button
               onClick={() => {
+                if (isTransitioning) return;
                 onOpenWizard();
                 setIsOpen(false);
               }}
