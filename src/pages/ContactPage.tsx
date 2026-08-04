@@ -7,9 +7,6 @@ import { sanitizeWhatsAppUrl, sanitizeSocialUrl } from '../utils/url';
 import { validateField, patterns } from '../components/FormField';
 import { notify } from '../utils/notifications';
 
-// Web3Forms API key — sign up free at https://web3forms.com
-const WEB3FORMS_ACCESS_KEY = '';
-
 export function ContactPage() {
   const { t } = useI18n();
   const { settings } = useSettings();
@@ -96,57 +93,25 @@ export function ContactPage() {
     const { name, email, phone, service, message } = formValues;
     const enquiryData = { name, email, phone, service, message, timestamp: new Date().toISOString() };
 
-    // Step 1 — always save to localStorage as backup
-    notify('contact', { name, email, phone, service, message }).catch(() => {});
+    // Save to localStorage as permanent backup
     try {
       const saved = localStorage.getItem('glasswater_enquiries');
       const enquiries = saved ? JSON.parse(saved) : [];
       enquiries.unshift(enquiryData);
-      localStorage.setItem('glasswater_enquiries', JSON.stringify(enquiries.slice(0, 50))); // keep last 50
-    } catch { /* localStorage may be full or unavailable */ }
+      localStorage.setItem('glasswater_enquiries', JSON.stringify(enquiries.slice(0, 50)));
+    } catch { /* localStorage may be unavailable */ }
 
-    // Step 2 — try Web3Forms API (serverless email delivery)
-    let apiSuccess = false;
-    if (WEB3FORMS_ACCESS_KEY) {
-      try {
-        const res = await fetch('https://api.web3forms.com/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            access_key: WEB3FORMS_ACCESS_KEY,
-            subject: `New Website Enquiry from ${name}`,
-            from_name: name,
-            replyto: email,
-            message: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nService: ${service}\n\nMessage:\n${message}`,
-          }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          apiSuccess = true;
-        }
-      } catch {
-        // Web3Forms failed — will fall back to mailto
-      }
-    }
+    // Fire Telegram notification in background
+    notify('contact', { name, email, phone, service, message }).catch(() => {});
 
     setIsSubmitting(false);
 
-    if (apiSuccess) {
-      // Step 3a — API succeeded, show in-page confirmation
-      setSubmitted(true);
-      setFormValues({ name: '', email: '', phone: '', service: '', message: '' });
-      setErrors({});
-      setTouched({});
-      addToast('success', 'Your enquiry has been sent! We will respond within 24 hours.', 5000);
-    } else {
-      // Step 3b — API unavailable, fall back to mailto
-      const subject = encodeURIComponent(`New Website Enquiry from ${name}`);
-      const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nService Interest: ${service}\n\nMessage:\n${message}`);
-      addToast('info', t('toast.email_opening'), 6000);
-      setTimeout(() => {
-        window.location.href = `mailto:${settings.email}?subject=${subject}&body=${body}`;
-      }, 500);
-    }
+    // Always show in-page confirmation
+    setSubmitted(true);
+    setFormValues({ name: '', email: '', phone: '', service: '', message: '' });
+    setErrors({});
+    setTouched({});
+    addToast('success', 'Your enquiry has been received! We will respond within 24 hours.', 5000);
   };
 
   const inputClass = "w-full p-4 border border-light-gray rounded font-sans text-base mb-2 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold bg-bg-body text-text-primary transition-all";
@@ -171,15 +136,23 @@ export function ContactPage() {
                 <CheckCircle2 size={40} className="text-green-600" />
               </div>
               <h3 className="font-serif text-2xl font-bold text-navy mb-4">Thank You!</h3>
-              <p className="text-text-secondary text-lg leading-relaxed mb-8">
+              <p className="text-text-secondary text-lg leading-relaxed mb-6">
                 Your enquiry has been received. Our team will review your message and respond within 24 hours.
               </p>
-              <button
-                onClick={() => setSubmitted(false)}
-                className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors cursor-pointer"
-              >
-                Send Another Message
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setSubmitted(false)}
+                  className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors cursor-pointer"
+                >
+                  Send Another Message
+                </button>
+                <a
+                  href={`mailto:${settings.email}`}
+                  className="border border-navy/20 text-navy px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Mail size={16} /> Email us directly
+                </a>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="bg-white p-8 md:p-12 rounded-lg shadow-custom" noValidate>

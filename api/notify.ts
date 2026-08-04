@@ -1,5 +1,5 @@
 /**
- * Vercel Edge Function — Telegram Notification Proxy
+ * Vercel Serverless Function — Telegram Notification Proxy
  * 
  * POST /api/notify
  * Body: { event: string, data: Record<string, string> }
@@ -9,74 +9,43 @@
  *   TELEGRAM_CHAT_ID   — Your chat ID from getUpdates
  */
 
-interface Env {
-  TELEGRAM_BOT_TOKEN: string;
-  TELEGRAM_CHAT_ID: string;
-}
-
 // Rate limit: prevent duplicate notifications for the same event within 60 seconds
 const rateLimitMap = new Map<string, number>();
 
 const VALID_EVENTS = ['contact', 'consultation', 'review', 'document', 'admin_login'] as const;
 type Event = typeof VALID_EVENTS[number];
 
-export async function onRequest({ request, env }: { request: Request; env: Env }) {
+export default async function handler(req: any, res: any) {
   // Only accept POST
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   // Parse and validate body
-  let body: { event?: string; data?: Record<string, string> };
-  try {
-    body = await request.json();
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const body = req.body;
+  if (!body || !body.event || !VALID_EVENTS.includes(body.event)) {
+    return res.status(400).json({ error: 'Invalid event type' });
   }
 
-  // Validate event type
-  if (!body.event || !VALID_EVENTS.includes(body.event as Event)) {
-    return new Response(JSON.stringify({ error: 'Invalid event type' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Validate data exists
   if (!body.data || typeof body.data !== 'object') {
-    return new Response(JSON.stringify({ error: 'Data is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(400).json({ error: 'Data is required' });
   }
 
   // Check env vars
-  const botToken = env.TELEGRAM_BOT_TOKEN;
-  const chatId = env.TELEGRAM_CHAT_ID;
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
 
   if (!botToken || !chatId) {
-    return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(500).json({ error: 'Server configuration error' });
   }
 
   // Rate limiting: same event + same client IP can't fire more than once per 60s
-  const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const clientIP = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
   const rateKey = `${body.event}:${clientIP}:${JSON.stringify(body.data).slice(0, 50)}`;
 
   const lastSent = rateLimitMap.get(rateKey);
   if (lastSent && Date.now() - lastSent < 60000) {
-    return new Response(JSON.stringify({ ok: true, throttled: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(200).json({ ok: true, throttled: true });
   }
   rateLimitMap.set(rateKey, Date.now());
 
@@ -103,22 +72,13 @@ export async function onRequest({ request, env }: { request: Request; env: Env }
 
     if (!tgRes.ok || !tgData.ok) {
       console.error('[Notify] Telegram API error:', tgData);
-      return new Response(JSON.stringify({ error: 'Failed to send notification' }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return res.status(502).json({ error: 'Failed to send notification' });
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[Notify] Network error:', err);
-    return new Response(JSON.stringify({ error: 'Notification service unavailable' }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(502).json({ error: 'Notification service unavailable' });
   }
 }
 
