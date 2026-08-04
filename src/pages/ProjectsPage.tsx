@@ -71,6 +71,7 @@ function ProjectCard({ p }: { key?: Key; p: ProjectData }) {
 export function ProjectsPage() {
   const { t, lang } = useI18n();
   const [projects, setProjects] = useState(getProjects(lang));
+  const [visibleCount, setVisibleCount] = useState(6);
 
   useEffect(() => {
     const saved = localStorage.getItem('glasswater_projects');
@@ -86,16 +87,27 @@ export function ProjectsPage() {
       <section className="py-8 md:py-12 px-6 border border-gold m-3 sm:m-4 lg:m-6 rounded-xl bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-6 md:mb-10 max-w-3xl mx-auto">
-            <h2 className="uppercase tracking-[0.3em] text-gold text-sm font-semibold mb-4">{t('projects.label')}</h2>
+            <h2 className="uppercase tracking-widest md:tracking-[0.3em] text-gold text-sm font-semibold mb-4 break-words">{t('projects.label')}</h2>
             <h1 className="font-serif text-5xl sm:text-6xl font-bold text-navy mb-6 md:mb-8">{t('projects.title')}</h1>
             <p className="text-xl text-text-secondary leading-relaxed">{t('projects.sub')}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
-            {projects.map(p => (
+            {projects.slice(0, visibleCount).map(p => (
               <ProjectCard key={p.id} p={p as ProjectData} />
             ))}
           </div>
+
+          {visibleCount < projects.length && (
+            <div className="mt-12 text-center">
+              <button
+                onClick={() => setVisibleCount(prev => prev + 6)}
+                className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy hover:-translate-y-0.5 hover:shadow-lg transition-all cursor-pointer"
+              >
+                Load More
+              </button>
+            </div>
+          )}
         </div>
       </section>
     </div>

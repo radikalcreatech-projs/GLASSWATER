@@ -1309,8 +1309,8 @@ If you have any questions, please do not hesitate to contact us.
                         <div>
                           <h3 className="font-bold text-navy text-lg">{enq.name || 'Anonymous'}</h3>
                           <div className="flex flex-wrap gap-3 mt-1 text-sm text-text-secondary">
-                            {enq.email && <span className="flex items-center gap-1">✉️ {enq.email}</span>}
-                            {enq.phone && <span className="flex items-center gap-1">📞 {enq.phone}</span>}
+                            {enq.email && <span className="flex items-center gap-1"><Mail size={14} className="text-gold shrink-0" /> {enq.email}</span>}
+                            {enq.phone && <span className="flex items-center gap-1"><Phone size={14} className="text-gold shrink-0" /> {enq.phone}</span>}
                             {enq.service && (
                               <span className="bg-gold/10 text-gold px-2 py-0.5 rounded text-xs font-semibold">
                                 {enq.service}

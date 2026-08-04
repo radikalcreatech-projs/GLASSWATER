@@ -122,8 +122,8 @@ export function ContactPage() {
       <section className="py-6 md:py-10 px-6 border border-gold m-3 sm:m-4 lg:m-6 rounded-xl bg-white">
         <div className="max-w-7xl mx-auto">
         <div className="text-center mb-4 md:mb-8 max-w-3xl mx-auto">
-          <img src={settings.contactImageUrl} alt="Contact Icon" className="w-full max-w-xs md:max-w-sm lg:max-w-md mx-auto mb-4 md:mb-8 object-contain" />
-          <h2 className="uppercase tracking-[0.3em] text-gold text-sm font-semibold mb-4">{t('contact.get_in_touch')}</h2>
+          <img src={settings.contactImageUrl} alt="Contact Icon" className="w-full max-w-xs md:max-w-sm lg:max-w-md mx-auto mb-4 md:mb-8 object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+          <h2 className="uppercase tracking-widest md:tracking-[0.3em] text-gold text-sm font-semibold mb-4 break-words">{t('contact.get_in_touch')}</h2>
           <h1 className="font-serif text-5xl sm:text-6xl font-bold text-navy mb-6 md:mb-8">{t('contact.title')}</h1>
           <p className="text-xl text-text-secondary leading-relaxed">{t('contact.sub')}</p>
         </div>
@@ -237,21 +237,21 @@ export function ContactPage() {
             <p className="text-steel-blue mb-6 md:mb-8 text-lg leading-relaxed max-w-md">{t('contact.infop')}</p>
 
             <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
-              <div className="flex items-center gap-6">
-                <div className="w-14 h-14 bg-light-gray rounded-full flex items-center justify-center shrink-0 text-gold"><Phone size={24} /></div>
-                <span className="text-text-primary text-xl font-medium">{settings.phone}</span>
+              <div className="flex items-center gap-4 md:gap-6">
+                <div className="w-12 h-12 md:w-14 md:h-14 bg-light-gray rounded-full flex items-center justify-center shrink-0 text-gold"><Phone size={24} /></div>
+                <span className="text-text-primary text-lg md:text-xl font-medium break-all md:break-normal">{settings.phone}</span>
               </div>
-              <div className="flex items-center gap-6">
-                <div className="w-14 h-14 bg-light-gray rounded-full flex items-center justify-center shrink-0 text-gold"><Mail size={24} /></div>
-                <span className="text-text-primary text-xl font-medium">{settings.email}</span>
+              <div className="flex items-center gap-4 md:gap-6">
+                <div className="w-12 h-12 md:w-14 md:h-14 bg-light-gray rounded-full flex items-center justify-center shrink-0 text-gold"><Mail size={24} /></div>
+                <span className="text-text-primary text-lg md:text-xl font-medium break-all md:break-normal">{settings.email}</span>
               </div>
-              <div className="flex items-center gap-6">
-                <div className="w-14 h-14 bg-[#25D366]/10 rounded-full flex items-center justify-center shrink-0 text-[#25D366]"><MessageCircle size={24} /></div>
-                <a href={sanitizeWhatsAppUrl(settings.whatsapp)} target="_blank" rel="noreferrer" className="text-[#25D366] text-xl font-semibold hover:underline">{t('whatsapp.chat')}</a>
+              <div className="flex items-center gap-4 md:gap-6">
+                <div className="w-12 h-12 md:w-14 md:h-14 bg-[#25D366]/10 rounded-full flex items-center justify-center shrink-0 text-[#25D366]"><MessageCircle size={24} /></div>
+                <a href={sanitizeWhatsAppUrl(settings.whatsapp)} target="_blank" rel="noreferrer" className="text-[#25D366] text-lg md:text-xl font-semibold hover:underline break-words">{t('whatsapp.chat')}</a>
               </div>
-              <div className="flex items-start gap-6">
-                <div className="w-14 h-14 bg-light-gray rounded-full flex items-center justify-center shrink-0 text-gold mt-1"><MapPin size={24} /></div>
-                <span className="text-text-primary text-xl font-medium leading-relaxed whitespace-pre-line">{settings.address}</span>
+              <div className="flex items-start gap-4 md:gap-6">
+                <div className="w-12 h-12 md:w-14 md:h-14 bg-light-gray rounded-full flex items-center justify-center shrink-0 text-gold mt-1"><MapPin size={24} /></div>
+                <span className="text-text-primary text-lg md:text-xl font-medium leading-relaxed whitespace-pre-line break-words">{settings.address}</span>
               </div>
             </div>
 
