@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { getReviews } from '../data';
+import { notify } from '../utils/notifications';
 
 interface Review {
   name: string;
@@ -44,6 +45,7 @@ export function ReviewsPage() {
     const updated = [newReview, ...reviews];
     setReviews(updated);
     localStorage.setItem('glasswater_reviews', JSON.stringify(updated));
+    notify('review', { name, rating: rating.toString(), text }).catch(() => {});
     alert('Thank you for your review!');
     setName('');
     setLocation('');

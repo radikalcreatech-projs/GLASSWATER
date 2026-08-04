@@ -4,6 +4,7 @@ import { useI18n } from '../context/I18nContext';
 import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
 import { validateField, patterns } from './FormField';
+import { notify } from '../utils/notifications';
 
 export function WizardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [step, setStep] = useState(1);
@@ -114,6 +115,14 @@ Note: Please email any photos, plans, or documents to ${settings.email || 'glass
 
     const mailtoUrl = `mailto:${settings.email || 'glasswaterfits@gmail.com'}?subject=${subject}&body=${body}`;
 
+    // Fire-and-forget Telegram notification
+    notify('consultation', {
+      name: formData.name,
+      type: formData.type,
+      budget: formData.budget,
+      urgency: formData.urgency,
+      address: formData.address,
+    }).catch(() => {});
     addToast('success', t('toast.form_submitted'), 6000);
 
     // Small delay to let toast render

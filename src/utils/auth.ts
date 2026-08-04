@@ -68,8 +68,8 @@ export async function login(password: string, storedHash?: string): Promise<{ su
       }
       // Wrong password even against stored hash
       apiError = 'Invalid password. Please try again.';
-    } catch {
-      // sha256 failed — shouldn't happen, but guard
+    } catch (err) {
+      console.error('[Glasswater Auth] SHA-256 hashing failed:', err);
     }
   }
 
@@ -128,7 +128,10 @@ export function isLockedOut(): { locked: boolean; remainingSeconds: number } {
     if (lock.lockUntil && Date.now() < lock.lockUntil) {
       return { locked: true, remainingSeconds: Math.ceil((lock.lockUntil - Date.now()) / 1000) };
     }
-  } catch { /* ignore */ }
+  } catch (err) {
+    console.error('[Glasswater Auth] Lockout state parse error:', err);
+    sessionStorage.removeItem(LOCKOUT_KEY);
+  }
   return { locked: false, remainingSeconds: 0 };
 }
 

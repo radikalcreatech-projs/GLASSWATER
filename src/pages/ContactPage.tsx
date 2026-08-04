@@ -2,15 +2,20 @@ import { useState } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
-import { Phone, MessageCircle, Mail, MapPin, Facebook, Linkedin, Instagram } from 'lucide-react';
+import { Phone, MessageCircle, Mail, MapPin, Facebook, Linkedin, Instagram, Loader, CheckCircle2 } from 'lucide-react';
 import { sanitizeWhatsAppUrl, sanitizeSocialUrl } from '../utils/url';
 import { validateField, patterns } from '../components/FormField';
+import { notify } from '../utils/notifications';
+
+// Web3Forms API key — sign up free at https://web3forms.com
+const WEB3FORMS_ACCESS_KEY = '';
 
 export function ContactPage() {
   const { t } = useI18n();
   const { settings } = useSettings();
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   // Form state for validation
   const [formValues, setFormValues] = useState({
@@ -25,7 +30,6 @@ export function ContactPage() {
 
   const handleChange = (field: string, value: string) => {
     setFormValues(prev => ({ ...prev, [field]: value }));
-    // Clear field error on change
     if (errors[field]) {
       setErrors(prev => {
         const next = { ...prev };
@@ -48,12 +52,12 @@ export function ContactPage() {
       case 'name':
         return validateField(value, { required: true, minLength: 2 });
       case 'email':
-        return validateField(value, { required: true, pattern: patterns.email, custom: () => value.trim() ? null : t('validation.email_required') });
+        return validateField(value, { required: true, pattern: patterns.email });
       case 'phone':
-        if (!value.trim()) return null; // optional
+        if (!value.trim()) return null;
         return validateField(value, { pattern: patterns.phone });
       case 'message':
-        return null; // optional
+        return null;
       default:
         return null;
     }
@@ -68,7 +72,6 @@ export function ContactPage() {
       const error = validateFormField(field, formValues[field as keyof typeof formValues]);
       if (error) newErrors[field] = error;
     }
-    // Optional phone check
     if (formValues.phone.trim()) {
       newTouched['phone'] = true;
       const phoneErr = validateFormField('phone', formValues.phone);
@@ -80,7 +83,7 @@ export function ContactPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateAll()) {
@@ -91,24 +94,59 @@ export function ContactPage() {
     setIsSubmitting(true);
 
     const { name, email, phone, service, message } = formValues;
-    const subject = encodeURIComponent(`New Website Enquiry from ${name}`);
-    const body = encodeURIComponent(`Name: ${name}
-Email: ${email}
-Phone: ${phone}
-Service Interest: ${service}
+    const enquiryData = { name, email, phone, service, message, timestamp: new Date().toISOString() };
 
-Message:
-${message}
-`);
+    // Step 1 — always save to localStorage as backup
+    notify('contact', { name, email, phone, service, message }).catch(() => {});
+    try {
+      const saved = localStorage.getItem('glasswater_enquiries');
+      const enquiries = saved ? JSON.parse(saved) : [];
+      enquiries.unshift(enquiryData);
+      localStorage.setItem('glasswater_enquiries', JSON.stringify(enquiries.slice(0, 50))); // keep last 50
+    } catch { /* localStorage may be full or unavailable */ }
 
-    // Show toast about email opening
-    addToast('info', t('toast.email_opening'), 6000);
+    // Step 2 — try Web3Forms API (serverless email delivery)
+    let apiSuccess = false;
+    if (WEB3FORMS_ACCESS_KEY) {
+      try {
+        const res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            access_key: WEB3FORMS_ACCESS_KEY,
+            subject: `New Website Enquiry from ${name}`,
+            from_name: name,
+            replyto: email,
+            message: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nService: ${service}\n\nMessage:\n${message}`,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          apiSuccess = true;
+        }
+      } catch {
+        // Web3Forms failed — will fall back to mailto
+      }
+    }
 
-    // Small delay to show toast before mailto opens
-    setTimeout(() => {
-      window.location.href = `mailto:${settings.email}?subject=${subject}&body=${body}`;
-      setIsSubmitting(false);
-    }, 500);
+    setIsSubmitting(false);
+
+    if (apiSuccess) {
+      // Step 3a — API succeeded, show in-page confirmation
+      setSubmitted(true);
+      setFormValues({ name: '', email: '', phone: '', service: '', message: '' });
+      setErrors({});
+      setTouched({});
+      addToast('success', 'Your enquiry has been sent! We will respond within 24 hours.', 5000);
+    } else {
+      // Step 3b — API unavailable, fall back to mailto
+      const subject = encodeURIComponent(`New Website Enquiry from ${name}`);
+      const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nService Interest: ${service}\n\nMessage:\n${message}`);
+      addToast('info', t('toast.email_opening'), 6000);
+      setTimeout(() => {
+        window.location.href = `mailto:${settings.email}?subject=${subject}&body=${body}`;
+      }, 500);
+    }
   };
 
   const inputClass = "w-full p-4 border border-light-gray rounded font-sans text-base mb-2 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold bg-bg-body text-text-primary transition-all";
@@ -126,102 +164,100 @@ ${message}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
-          <form onSubmit={handleSubmit} className="bg-white p-8 md:p-12 rounded-lg shadow-custom" noValidate>
-            <div className="mb-2">
-              <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">
-                Full Name<span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                placeholder="Full Name"
-                value={formValues.name}
-                onChange={e => handleChange('name', e.target.value)}
-                onBlur={() => handleBlur('name')}
-                className={touched.name && errors.name ? errorInputClass : inputClass}
-              />
-              {touched.name && errors.name && (
-                <p className="text-xs text-red-600 font-medium mb-3 flex items-center gap-1">
-                  <span className="inline-block w-1 h-1 bg-red-500 rounded-full shrink-0" />
-                  {errors.name}
-                </p>
-              )}
+          {submitted ? (
+            /* Confirmation state */
+            <div className="bg-white p-8 md:p-12 rounded-lg shadow-custom flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
+                <CheckCircle2 size={40} className="text-green-600" />
+              </div>
+              <h3 className="font-serif text-2xl font-bold text-navy mb-4">Thank You!</h3>
+              <p className="text-text-secondary text-lg leading-relaxed mb-8">
+                Your enquiry has been received. Our team will review your message and respond within 24 hours.
+              </p>
+              <button
+                onClick={() => setSubmitted(false)}
+                className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors cursor-pointer"
+              >
+                Send Another Message
+              </button>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="bg-white p-8 md:p-12 rounded-lg shadow-custom" noValidate>
+              <div className="mb-2">
+                <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">
+                  Full Name<span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  type="text" name="name" placeholder="Full Name"
+                  value={formValues.name} onChange={e => handleChange('name', e.target.value)} onBlur={() => handleBlur('name')}
+                  className={touched.name && errors.name ? errorInputClass : inputClass}
+                />
+                {touched.name && errors.name && (
+                  <p className="text-xs text-red-600 font-medium mb-3 flex items-center gap-1">
+                    <span className="inline-block w-1 h-1 bg-red-500 rounded-full shrink-0" />{errors.name}
+                  </p>
+                )}
+              </div>
 
-            <div className="mb-2">
-              <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">
-                Email Address<span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                type="email"
-                name="email"
-                placeholder="Email Address"
-                value={formValues.email}
-                onChange={e => handleChange('email', e.target.value)}
-                onBlur={() => handleBlur('email')}
-                className={touched.email && errors.email ? errorInputClass : inputClass}
-              />
-              {touched.email && errors.email && (
-                <p className="text-xs text-red-600 font-medium mb-3 flex items-center gap-1">
-                  <span className="inline-block w-1 h-1 bg-red-500 rounded-full shrink-0" />
-                  {errors.email}
-                </p>
-              )}
-            </div>
+              <div className="mb-2">
+                <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">
+                  Email Address<span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  type="email" name="email" placeholder="Email Address"
+                  value={formValues.email} onChange={e => handleChange('email', e.target.value)} onBlur={() => handleBlur('email')}
+                  className={touched.email && errors.email ? errorInputClass : inputClass}
+                />
+                {touched.email && errors.email && (
+                  <p className="text-xs text-red-600 font-medium mb-3 flex items-center gap-1">
+                    <span className="inline-block w-1 h-1 bg-red-500 rounded-full shrink-0" />{errors.email}
+                  </p>
+                )}
+              </div>
 
-            <div className="mb-2">
-              <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Phone Number</label>
-              <input
-                type="tel"
-                name="phone"
-                placeholder="Phone Number"
-                value={formValues.phone}
-                onChange={e => handleChange('phone', e.target.value)}
-                onBlur={() => handleBlur('phone')}
-                className={touched.phone && errors.phone ? errorInputClass : inputClass}
-              />
-              {touched.phone && errors.phone && (
-                <p className="text-xs text-red-600 font-medium mb-3 flex items-center gap-1">
-                  <span className="inline-block w-1 h-1 bg-red-500 rounded-full shrink-0" />
-                  {errors.phone}
-                </p>
-              )}
-            </div>
+              <div className="mb-2">
+                <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Phone Number</label>
+                <input
+                  type="tel" name="phone" placeholder="Phone Number"
+                  value={formValues.phone} onChange={e => handleChange('phone', e.target.value)} onBlur={() => handleBlur('phone')}
+                  className={touched.phone && errors.phone ? errorInputClass : inputClass}
+                />
+                {touched.phone && errors.phone && (
+                  <p className="text-xs text-red-600 font-medium mb-3 flex items-center gap-1">
+                    <span className="inline-block w-1 h-1 bg-red-500 rounded-full shrink-0" />{errors.phone}
+                  </p>
+                )}
+              </div>
 
-            <select
-              name="service"
-              value={formValues.service}
-              onChange={e => handleChange('service', e.target.value)}
-              className={`${inputClass} mb-2`}
-            >
-              <option value="">{t('contact.service')}</option>
-              <option>{t('contact.opt_eng')}</option>
-              <option>{t('contact.opt_const')}</option>
-              <option>{t('contact.opt_int')}</option>
-              <option>{t('contact.opt_fin')}</option>
-              <option>{t('contact.opt_water')}</option>
-              <option>{t('contact.opt_pool')}</option>
-              <option>{t('contact.opt_fm')}</option>
-              <option>{t('contact.opt_other')}</option>
-            </select>
+              <select
+                name="service" value={formValues.service} onChange={e => handleChange('service', e.target.value)}
+                className={`${inputClass} mb-2`}
+              >
+                <option value="">{t('contact.service')}</option>
+                <option>{t('contact.opt_eng')}</option>
+                <option>{t('contact.opt_const')}</option>
+                <option>{t('contact.opt_int')}</option>
+                <option>{t('contact.opt_fin')}</option>
+                <option>{t('contact.opt_water')}</option>
+                <option>{t('contact.opt_pool')}</option>
+                <option>{t('contact.opt_fm')}</option>
+                <option>{t('contact.opt_other')}</option>
+              </select>
 
-            <textarea
-              name="message"
-              placeholder="Tell us about your project..."
-              rows={6}
-              value={formValues.message}
-              onChange={e => handleChange('message', e.target.value)}
-              className={`${inputClass} resize-y`}
-            ></textarea>
+              <textarea
+                name="message" placeholder="Tell us about your project..." rows={6}
+                value={formValues.message} onChange={e => handleChange('message', e.target.value)}
+                className={`${inputClass} resize-y`}
+              ></textarea>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-gold text-white px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {isSubmitting ? 'Opening email...' : t('contact.send')}
-            </button>
-          </form>
+              <button
+                type="submit" disabled={isSubmitting}
+                className="bg-gold text-white px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? <><Loader size={16} className="animate-spin" /> Sending...</> : t('contact.send')}
+              </button>
+            </form>
+          )}
 
           <div className="flex flex-col justify-center">
             <h3 className="font-serif font-bold text-3xl text-navy mb-4">{t('contact.info')}</h3>

@@ -1,8 +1,11 @@
 import { useI18n } from '../context/I18nContext';
-import { Settings, HardHat, Sofa, Paintbrush, Droplets, Waves, Building2 } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
+import { Settings, HardHat, Sofa, Paintbrush, Droplets, Waves, Building2, MessageCircle } from 'lucide-react';
+import { sanitizeWhatsAppUrl } from '../utils/url';
 
 export function ServicesPage() {
   const { t } = useI18n();
+  const { settings } = useSettings();
 
   const services = [
     { icon: Settings, titleKey: 'services.eng', descKey: 'services.engp' },
@@ -26,10 +29,18 @@ export function ServicesPage() {
           
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 md:overflow-visible no-scrollbar">
             {services.map((service, idx) => (
-              <div key={idx} className="min-w-[85%] sm:min-w-[70%] md:min-w-0 snap-center bg-white p-6 md:p-8 rounded-lg shadow-custom hover:-translate-y-2 transition-all">
+              <div key={idx} className="min-w-[85%] sm:min-w-[70%] md:min-w-0 snap-center bg-white p-6 md:p-8 rounded-lg shadow-custom hover:-translate-y-2 transition-all group">
                 <service.icon className="w-8 h-8 md:w-10 md:h-10 text-gold mb-4 md:mb-6 stroke-[1.5]" />
                 <h3 className="font-serif font-bold text-xl text-navy mb-3">{t(service.titleKey)}</h3>
-                <p className="text-text-secondary text-sm md:text-base leading-relaxed">{t(service.descKey)}</p>
+                <p className="text-text-secondary text-sm md:text-base leading-relaxed mb-4">{t(service.descKey)}</p>
+                <a
+                  href={`${sanitizeWhatsAppUrl(settings.whatsapp)}?text=${encodeURIComponent(`Hi Glasswater, I'm interested in your ${t(service.titleKey)} service. Can you provide more information?`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[#25D366] text-xs font-semibold uppercase tracking-wider hover:text-[#128C7E] transition-colors"
+                >
+                  <MessageCircle size={14} /> Inquire Now
+                </a>
               </div>
             ))}
           </div>

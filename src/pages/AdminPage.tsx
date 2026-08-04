@@ -1,12 +1,13 @@
 import React from "react";
 import { useState, useEffect } from 'react';
 import { useNavigation } from '../context/NavigationContext';
-import { Settings, LogOut, CheckCircle2, XCircle, Trash2, Edit, Star, Plus, FileText, Copy, Check, Info, Share2, Eye, PlusCircle, Trash, Globe, Download, Loader, EyeOff } from 'lucide-react';
+import { Settings, LogOut, CheckCircle2, XCircle, Trash2, Edit, Star, Plus, FileText, Copy, Check, Info, Share2, Eye, PlusCircle, Trash, Globe, Download, Loader, EyeOff, Mail } from 'lucide-react';
 import { projects as defaultProjects, posts as defaultPosts, defaultReviews } from '../data';
 import { useSettings, WebsiteSettings, ClientDocument, DocumentItem } from '../context/SettingsContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { login as authLogin, logout as authLogout, isAuthenticated as checkAuth, isLockedOut, clearLockout } from '../utils/auth';
+import { notify } from '../utils/notifications';
 
 export function AdminPage() {
   const { navigate, isTransitioning } = useNavigation();
@@ -21,11 +22,12 @@ export function AdminPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showSettingsPassword, setShowSettingsPassword] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'reviews' | 'projects' | 'insights' | 'settings' | 'documents'>('reviews');
+  const [activeTab, setActiveTab] = useState<'reviews' | 'projects' | 'insights' | 'settings' | 'documents' | 'enquiries'>('reviews');
 
   const [reviews, setReviews] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
+  const [enquiries, setEnquiries] = useState<any[]>([]);
 
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
@@ -200,6 +202,12 @@ If you have any questions, please do not hesitate to contact us.
       setDocSaveMessage(message);
       setEditingDoc(null);
       setIsSavingDoc(false);
+      notify('document', {
+        type: editingDoc.type,
+        code: editingDoc.code,
+        client: editingDoc.clientName,
+        amount: editingDoc.totalAmount.toFixed(2),
+      }).catch(() => {});
       addToast('success', t('toast.doc_saved'), 4000);
     }, 300);
   };
@@ -228,6 +236,11 @@ If you have any questions, please do not hesitate to contact us.
     if (savedPosts) {
       try { setPosts(JSON.parse(savedPosts)); } catch (e) { console.error('Failed to load glasswater_posts:', e); }
     } else { setPosts(defaultPosts); }
+
+    const savedEnquiries = localStorage.getItem('glasswater_enquiries');
+    if (savedEnquiries) {
+      try { setEnquiries(JSON.parse(savedEnquiries)); } catch (e) { console.error('Failed to load enquiries:', e); }
+    }
   }, []);
 
   // Session inactivity timeout (30 minutes)
@@ -283,6 +296,7 @@ If you have any questions, please do not hesitate to contact us.
         setLoginError('');
         clearLockout();
         setLoginLocked(false);
+        notify('admin_login', {}).catch(() => {});
         addToast('success', 'Welcome back!', 3000);
       } else {
         const errMsg = (result as { success: false; error: string }).error;
@@ -306,6 +320,21 @@ If you have any questions, please do not hesitate to contact us.
     if (tab !== 'documents') {
       setShowDocForm(false);
     }
+    // Refresh enquiries when tab is clicked
+    if (tab === 'enquiries') {
+      const saved = localStorage.getItem('glasswater_enquiries');
+      if (saved) {
+        try { setEnquiries(JSON.parse(saved)); } catch {}
+      }
+    }
+  };
+
+  const deleteEnquiry = (index: number) => {
+    if (!confirm('Delete this enquiry?')) return;
+    const newEnquiries = [...enquiries];
+    newEnquiries.splice(index, 1);
+    setEnquiries(newEnquiries);
+    localStorage.setItem('glasswater_enquiries', JSON.stringify(newEnquiries));
   };
 
   const deleteReview = (index: number) => {
@@ -450,6 +479,7 @@ If you have any questions, please do not hesitate to contact us.
             ['insights', t('admin.tab_insights')],
             ['settings', t('admin.tab_settings')],
             ['documents', t('admin.tab_documents')],
+            ['enquiries', 'Enquiries'],
           ] as const).map(([tab, label]) => (
             <button
               key={tab}
@@ -507,7 +537,7 @@ If you have any questions, please do not hesitate to contact us.
                 <h2 className="font-serif text-2xl font-bold text-navy">{t('admin.projects_count')} ({projects.length})</h2>
                 <button
                   onClick={() => {
-                    setEditingItem({ title: '', category: '', desc: '', value: '', duration: '', slug: '', content: '', image: 'https://lh3.googleusercontent.com/d/1yybAmLVE2csJ7mUpp1kqgYMA_Jsk4aeZ' });
+                    setEditingItem({ title: '', category: '', desc: '', value: '', duration: '', slug: '', content: '', gallery: [], image: 'https://lh3.googleusercontent.com/d/1yybAmLVE2csJ7mUpp1kqgYMA_Jsk4aeZ' });
                     setShowForm(true);
                   }}
                   className="bg-gold text-white px-4 py-2 rounded font-semibold uppercase tracking-widest text-sm hover:bg-navy transition-colors flex items-center gap-2 cursor-pointer"
@@ -591,6 +621,56 @@ If you have any questions, please do not hesitate to contact us.
                   className={`${inputClass} resize-y font-mono text-sm`}
                   placeholder="<h3>Project Overview</h3><p>Write your case study content here using HTML. Use <h3> for section headers and <p> for paragraphs.</p>"
                 ></textarea>
+
+                <div className="bg-light-gray/40 p-6 rounded-lg border border-light-gray mb-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-serif text-lg font-bold text-navy">Gallery Images</h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentGallery = editingItem.gallery || [];
+                        setEditingItem({...editingItem, gallery: [...currentGallery, '']});
+                      }}
+                      className="bg-navy text-white text-xs font-semibold px-4 py-2 rounded uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer"
+                    >
+                      + Add Image
+                    </button>
+                  </div>
+                  {(editingItem.gallery || []).length === 0 ? (
+                    <p className="text-text-secondary text-sm">No gallery images added. Add photos from Google Drive to showcase this project.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {(editingItem.gallery || []).map((url: string, idx: number) => (
+                        <div key={idx} className="flex gap-2 items-start">
+                          <input
+                            type="text"
+                            value={url}
+                            placeholder="https://lh3.googleusercontent.com/d/..."
+                            onChange={e => {
+                              const newGallery = [...(editingItem.gallery || [])];
+                              newGallery[idx] = e.target.value;
+                              setEditingItem({...editingItem, gallery: newGallery});
+                            }}
+                            className="flex-1 p-2 border border-light-gray rounded text-sm focus:outline-none focus:border-gold bg-white"
+                          />
+                          {url && (
+                            <img src={url} alt="" className="w-16 h-16 object-cover rounded border border-light-gray shrink-0" />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newGallery = (editingItem.gallery || []).filter((_: any, i: number) => i !== idx);
+                              setEditingItem({...editingItem, gallery: newGallery});
+                            }}
+                            className="p-2 text-red-500 hover:text-red-700 transition-colors cursor-pointer shrink-0"
+                          >
+                            <Trash size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 <button type="submit" className="bg-navy text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer">
                   {t('admin.save_project')}
@@ -1203,6 +1283,61 @@ If you have any questions, please do not hesitate to contact us.
                       </table>
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ENQUIRIES TAB */}
+          {activeTab === 'enquiries' && (
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="font-serif text-2xl font-bold text-navy flex items-center gap-2">
+                  <Mail size={22} className="text-gold" /> Contact Enquiries ({enquiries.length})
+                </h2>
+              </div>
+              {enquiries.length === 0 ? (
+                <div className="text-center py-12 text-text-secondary">
+                  <p className="text-lg">No enquiries received yet.</p>
+                  <p className="text-sm mt-2">Contact form submissions will appear here automatically.</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {enquiries.map((enq, i) => (
+                    <div key={i} className="border border-light-gray p-5 rounded-lg">
+                      <div className="flex flex-col sm:flex-row justify-between gap-4 mb-3">
+                        <div>
+                          <h3 className="font-bold text-navy text-lg">{enq.name || 'Anonymous'}</h3>
+                          <div className="flex flex-wrap gap-3 mt-1 text-sm text-text-secondary">
+                            {enq.email && <span className="flex items-center gap-1">✉️ {enq.email}</span>}
+                            {enq.phone && <span className="flex items-center gap-1">📞 {enq.phone}</span>}
+                            {enq.service && (
+                              <span className="bg-gold/10 text-gold px-2 py-0.5 rounded text-xs font-semibold">
+                                {enq.service}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 shrink-0">
+                          <span className="text-xs text-concrete-gray whitespace-nowrap">
+                            {enq.timestamp ? new Date(enq.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                          </span>
+                          <button
+                            onClick={() => deleteEnquiry(i)}
+                            className="text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+                            title="Delete enquiry"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      {enq.message && (
+                        <div className="bg-light-gray/30 p-4 rounded text-sm text-text-secondary leading-relaxed whitespace-pre-line">
+                          {enq.message}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

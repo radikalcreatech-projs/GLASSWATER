@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useNavigation } from '../context/NavigationContext';
+import { useSettings } from '../context/SettingsContext';
 import { getProjects } from '../data';
-import { ArrowLeft, MapPin, Calendar, Banknote } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Banknote, MessageCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { safeCssUrl } from '../utils/safeCssUrl';
+import { sanitizeWhatsAppUrl } from '../utils/url';
 
 function parseProjectSlug(): string | null {
   const raw = window.location.hash;
@@ -17,8 +19,11 @@ function parseProjectSlug(): string | null {
 export function ProjectDetailPage() {
   const { t, lang } = useI18n();
   const { navigate } = useNavigation();
+  const { settings } = useSettings();
   const [project, setProject] = useState<any>(null);
   const [notFound, setNotFound] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const gallery = (project as any)?.gallery || [];
 
   useEffect(() => {
     const slug = parseProjectSlug();
@@ -125,15 +130,94 @@ export function ProjectDetailPage() {
           {/* CTA */}
           <div className="mt-16 pt-10 border-t border-light-gray text-center">
             <p className="text-text-secondary mb-6">Interested in a similar project? Let's discuss your requirements.</p>
-            <button
-              onClick={() => navigate('contact')}
-              className="bg-gold text-white px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors shadow-custom cursor-pointer"
-            >
-              Start Your Project
-            </button>
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+              <a
+                href={`${sanitizeWhatsAppUrl(settings.whatsapp)}?text=${encodeURIComponent(`Hi Glasswater, I'm interested in the "${project.title}" case study. Can I get a quote or more information?`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-[#25D366] text-white px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-[#128C7E] transition-colors shadow-custom cursor-pointer flex items-center justify-center gap-2"
+              >
+                <MessageCircle size={18} /> Inquire on WhatsApp
+              </a>
+              <button
+                onClick={() => navigate('contact')}
+                className="bg-gold text-white px-10 py-4 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors shadow-custom cursor-pointer"
+              >
+                Start Your Project
+              </button>
+            </div>
           </div>
         </div>
       </section>
+
+      {/* Gallery Strip */}
+      {gallery.length > 0 && (
+        <section className="py-8 px-6 m-3 sm:m-4 lg:m-6">
+          <div className="max-w-7xl mx-auto">
+            <h3 className="font-serif text-2xl font-bold text-navy mb-6">Project Gallery</h3>
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 no-scrollbar">
+              {gallery.map((url: string, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => setLightboxIndex(idx)}
+                  className="shrink-0 snap-center cursor-pointer hover:opacity-90 transition-opacity"
+                >
+                  <img
+                    src={url}
+                    alt={`${project.title} - Photo ${idx + 1}`}
+                    className="h-48 md:h-64 w-auto rounded-lg object-cover bg-light-gray"
+                    loading="lazy"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxIndex !== null && gallery.length > 0 && (
+        <div
+          className="fixed inset-0 bg-black/90 z-[4000] flex items-center justify-center p-4"
+          onClick={() => setLightboxIndex(null)}
+        >
+          <button
+            onClick={() => setLightboxIndex(null)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white cursor-pointer z-10"
+          >
+            <X size={32} />
+          </button>
+
+          {gallery.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex > 0 ? lightboxIndex - 1 : gallery.length - 1); }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white cursor-pointer z-10"
+            >
+              <ChevronLeft size={40} />
+            </button>
+          )}
+
+          <img
+            src={gallery[lightboxIndex]}
+            alt={`${project.title} - Photo ${lightboxIndex + 1}`}
+            className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {gallery.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex < gallery.length - 1 ? lightboxIndex + 1 : 0); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white cursor-pointer z-10"
+            >
+              <ChevronRight size={40} />
+            </button>
+          )}
+
+          <div className="absolute bottom-6 text-white/60 text-sm">
+            {lightboxIndex + 1} / {gallery.length}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
