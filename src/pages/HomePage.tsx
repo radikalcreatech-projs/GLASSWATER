@@ -198,7 +198,7 @@ export function HomePage() {
 
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible no-scrollbar">
             {localProjects.slice(0, 3).map(p => (
-              <LazyProjectCard key={p.id} p={p as Project} onClick={() => navigate('projects')} />
+              <LazyProjectCard key={p.id} p={p as Project} onClick={() => { const slug = (p as any).slug || p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'); window.location.hash = `#project?slug=${slug}`; }} />
             ))}
           </div>
         </div>

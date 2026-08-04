@@ -69,14 +69,10 @@ export function PostPage() {
             <ArrowLeft size={20} /> {t('post.back')}
           </button>
           
-          <div className="prose prose-lg max-w-none text-text-secondary">
-            {post.content.split('\n\n').map((paragraph, idx) => {
-              if (paragraph.startsWith('###')) {
-                return <h3 key={idx} className="text-2xl font-serif font-bold text-navy mt-12 mb-6">{paragraph.replace('### ', '')}</h3>
-              }
-              return <p key={idx} className="mb-6 leading-relaxed">{paragraph}</p>
-            })}
-          </div>
+          <div
+            className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:text-navy prose-headings:mt-12 prose-headings:mb-6 prose-p:text-text-secondary prose-p:leading-relaxed prose-strong:text-navy prose-em:text-steel-blue prose-li:text-text-secondary prose-li:leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
 
           <div className="mt-20 pt-10 border-t border-light-gray flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
