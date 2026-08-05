@@ -135,22 +135,22 @@ export function ContactPage() {
               <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
                 <CheckCircle2 size={40} className="text-green-600" />
               </div>
-              <h3 className="font-serif text-2xl font-bold text-navy mb-4">Thank You!</h3>
+              <h3 className="font-serif text-2xl font-bold text-navy mb-4">{t('contact.thank_you')}</h3>
               <p className="text-text-secondary text-lg leading-relaxed mb-6">
-                Your enquiry has been received. Our team will review your message and respond within 24 hours.
+                {t('contact.success_msg')}
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setSubmitted(false)}
                   className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors cursor-pointer"
                 >
-                  Send Another Message
+                  {t('contact.send_another')}
                 </button>
                 <a
                   href={`mailto:${settings.email}`}
                   className="border border-navy/20 text-navy px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <Mail size={16} /> Email us directly
+                  <Mail size={16} /> {t('contact.email_us')}
                 </a>
               </div>
             </div>
@@ -158,10 +158,10 @@ export function ContactPage() {
             <form onSubmit={handleSubmit} className="bg-white p-8 md:p-12 rounded-lg shadow-custom" noValidate>
               <div className="mb-2">
                 <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">
-                  Full Name<span className="text-red-500 ml-1">*</span>
+                  {t('contact.full_name')} <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text" name="name" placeholder="Full Name"
+                  type="text" name="name" placeholder={t('contact.full_name')}
                   value={formValues.name} onChange={e => handleChange('name', e.target.value)} onBlur={() => handleBlur('name')}
                   className={touched.name && errors.name ? errorInputClass : inputClass}
                 />
@@ -174,10 +174,10 @@ export function ContactPage() {
 
               <div className="mb-2">
                 <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">
-                  Email Address<span className="text-red-500 ml-1">*</span>
+                  {t('contact.email_address')} <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="email" name="email" placeholder="Email Address"
+                  type="email" name="email" placeholder={t('contact.email_address')}
                   value={formValues.email} onChange={e => handleChange('email', e.target.value)} onBlur={() => handleBlur('email')}
                   className={touched.email && errors.email ? errorInputClass : inputClass}
                 />
@@ -189,9 +189,9 @@ export function ContactPage() {
               </div>
 
               <div className="mb-2">
-                <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">Phone Number</label>
+                <label className="block text-xs font-semibold text-navy mb-2 uppercase tracking-widest">{t('contact.phone_number')}</label>
                 <input
-                  type="tel" name="phone" placeholder="Phone Number"
+                  type="tel" name="phone" placeholder={t('contact.phone_number')}
                   value={formValues.phone} onChange={e => handleChange('phone', e.target.value)} onBlur={() => handleBlur('phone')}
                   className={touched.phone && errors.phone ? errorInputClass : inputClass}
                 />
@@ -218,7 +218,7 @@ export function ContactPage() {
               </select>
 
               <textarea
-                name="message" placeholder="Tell us about your project..." rows={6}
+                name="message" placeholder={t('contact.tell_us')} rows={6}
                 value={formValues.message} onChange={e => handleChange('message', e.target.value)}
                 className={`${inputClass} resize-y`}
               ></textarea>

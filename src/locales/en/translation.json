@@ -382,5 +382,19 @@
   "portal.client_info": "Client Information",
   "portal.system_status": "System Status",
   "portal.subject_matter": "Subject Matter",
-  "portal.statement_accounts": "Statement of Accounts"
+  "portal.statement_accounts": "Statement of Accounts",
+  "projects.load_more": "Load More",
+  "projects.view_case_study": "View Case Study",
+  "project.back_to_portfolio": "Back to Portfolio",
+  "contact.send_another": "Send Another Message",
+  "contact.email_us": "Email us directly",
+  "contact.thank_you": "Thank You!",
+  "contact.success_msg": "Your enquiry has been received. Our team will review your message and respond within 24 hours.",
+  "contact.full_name": "Full Name",
+  "contact.email_address": "Email Address",
+  "contact.phone_number": "Phone Number",
+  "contact.tell_us": "Tell us about your project...",
+  "post.back": "Back to Articles",
+  "post.experts": "By Industry Experts",
+  "post.share": "Share Article"
 }

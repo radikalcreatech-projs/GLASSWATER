@@ -57,7 +57,7 @@ export function ProjectDetailPage() {
         <h1 className="font-serif text-3xl font-bold text-navy mb-4">Project Not Found</h1>
         <p className="text-text-secondary mb-8">The case study you're looking for doesn't exist or has been removed.</p>
         <button onClick={() => navigate('projects')} className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors cursor-pointer">
-          Back to Portfolio
+          {t('project.back_to_portfolio')}
         </button>
       </div>
     );
@@ -76,7 +76,7 @@ export function ProjectDetailPage() {
             onClick={() => navigate('projects')}
             className="inline-flex items-center gap-2 text-white/80 hover:text-white font-semibold uppercase tracking-widest text-xs transition-colors mb-4 cursor-pointer"
           >
-            <ArrowLeft size={16} /> Back to Portfolio
+            <ArrowLeft size={16} /> {t('project.back_to_portfolio')}
           </button>
           <span className="inline-block bg-gold text-white px-3 py-1 rounded text-xs font-bold uppercase tracking-widest mb-3">
             {project.category}

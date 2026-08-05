@@ -16,6 +16,8 @@ export function InsightsPage() {
       try {
         const parsed = JSON.parse(saved); setPosts([...parsed, ...getPosts(lang).filter(p => !parsed.find(op => op.slug === p.slug))]);
       } catch (e) { console.error('Failed to load glasswater_posts from localStorage:', e); }
+    } else {
+      setPosts(getPosts(lang));
     }
   }, [lang]);
 
@@ -24,7 +26,7 @@ export function InsightsPage() {
       <section className="py-6 md:py-10 px-4 md:px-6 border border-gold m-3 sm:m-4 lg:m-6 rounded-xl bg-white">
         <div className="max-w-7xl mx-auto">
         <div className="text-center mb-6 max-w-3xl mx-auto">
-          <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">Insights & News</h2>
+          <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-2">{t('insights.label')}</h2>
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-navy mb-4">{t('insights.title')}</h1>
           <p className="text-base md:text-lg text-text-secondary leading-relaxed">{t('insights.sub')}</p>
         </div>

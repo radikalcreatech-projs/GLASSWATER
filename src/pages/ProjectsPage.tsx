@@ -61,7 +61,7 @@ function ProjectCard({ p }: { key?: Key; p: ProjectData }) {
           onClick={() => { window.location.hash = `#project?slug=${slug}`; }}
           className="flex items-center text-gold font-semibold uppercase tracking-widest text-sm group-hover:translate-x-2 transition-transform cursor-pointer"
         >
-          View Case Study <ArrowRight size={16} className="ml-2" />
+          {t('projects.view_case_study')} <ArrowRight size={16} className="ml-2" />
         </button>
       </div>
     </div>
@@ -77,8 +77,11 @@ export function ProjectsPage() {
     const saved = localStorage.getItem('glasswater_projects');
     if (saved) {
       try {
-        const parsed = JSON.parse(saved); setProjects([...parsed, ...getProjects(lang).filter(p => !parsed.find((op: any) => op.id === p.id))]);
+        const parsed = JSON.parse(saved); 
+        setProjects([...parsed, ...getProjects(lang).filter(p => !parsed.find((op: any) => op.id === p.id))]);
       } catch (e) { console.error('Failed to load projects from localStorage:', e); }
+    } else {
+      setProjects(getProjects(lang));
     }
   }, [lang]);
 
@@ -100,11 +103,8 @@ export function ProjectsPage() {
 
           {visibleCount < projects.length && (
             <div className="mt-12 text-center">
-              <button
-                onClick={() => setVisibleCount(prev => prev + 6)}
-                className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy hover:-translate-y-0.5 hover:shadow-lg transition-all cursor-pointer"
-              >
-                Load More
+              <button onClick={() => setVisibleCount(prev => prev + 6)} className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors cursor-pointer">
+                {t('projects.load_more')}
               </button>
             </div>
           )}
