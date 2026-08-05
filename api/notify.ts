@@ -15,6 +15,30 @@ const rateLimitMap = new Map<string, number>();
 const VALID_EVENTS = ['contact', 'consultation', 'review', 'document', 'admin_login'] as const;
 type Event = typeof VALID_EVENTS[number];
 
+interface GeoData {
+  city: string;
+  region: string;
+  country: string;
+  isp: string;
+}
+
+async function getGeoLocation(ip: string): Promise<GeoData | null> {
+  if (!ip || ip === 'unknown' || ip === '127.0.0.1' || ip.startsWith('192.168.')) return null;
+  try {
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country,isp`);
+    const data: any = await res.json().catch(() => null);
+    if (data && data.status !== 'fail') {
+      return {
+        city: data.city || '',
+        region: data.regionName || '',
+        country: data.country || '',
+        isp: data.isp || '',
+      };
+    }
+  } catch { /* geo lookup failed — non-critical */ }
+  return null;
+}
+
 export default async function handler(req: any, res: any) {
   // Only accept POST
   if (req.method !== 'POST') {
@@ -39,8 +63,10 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
+  // Get client IP for geolocation
+  const clientIP = (req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown').split(',')[0].trim();
+
   // Rate limiting: same event + same client IP can't fire more than once per 60s
-  const clientIP = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
   const rateKey = `${body.event}:${clientIP}:${JSON.stringify(body.data).slice(0, 50)}`;
 
   const lastSent = rateLimitMap.get(rateKey);
@@ -49,8 +75,28 @@ export default async function handler(req: any, res: any) {
   }
   rateLimitMap.set(rateKey, Date.now());
 
-  // Build formatted message
-  const message = formatEventMessage(body.event as Event, body.data);
+  // Get geolocation data in parallel with message building
+  const geoPromise = getGeoLocation(clientIP);
+
+  // Build formatted message (without geo first)
+  let message = formatEventMessage(body.event as Event, body.data);
+
+  // Append device/location metadata if available
+  const metadata = buildMetadata(body.data);
+  if (metadata) {
+    message += '\n\n' + metadata;
+  }
+
+  // Append geolocation
+  const geo = await geoPromise;
+  if (geo) {
+    const locationParts = [geo.city, geo.region, geo.country].filter(Boolean).join(', ');
+    const geoLine = `\n<b>📍 Location:</b> ${locationParts}${geo.isp ? ` — ${geo.isp}` : ''}`;
+    message += geoLine;
+  } else {
+    // Show IP as fallback
+    message += `\n<b>🌐 IP:</b> <code>${clientIP}</code>`;
+  }
 
   // Send to Telegram
   try {
@@ -80,6 +126,35 @@ export default async function handler(req: any, res: any) {
     console.error('[Notify] Network error:', err);
     return res.status(502).json({ error: 'Notification service unavailable' });
   }
+}
+
+/** Builds a device/browser/referrer metadata line from client context */
+function buildMetadata(data: Record<string, string>): string {
+  const parts: string[] = [];
+
+  if (data.browser && data.device) {
+    parts.push(`<b>📱 Device:</b> ${data.browser} on ${data.platform} (${data.device})`);
+  } else if (data.browser) {
+    parts.push(`<b>📱 Device:</b> ${data.browser} on ${data.platform || 'Unknown'}`);
+  }
+
+  if (data.screenSize && data.viewport) {
+    parts.push(`<b>🖥️ Display:</b> ${data.screenSize} (viewport: ${data.viewport})`);
+  }
+
+  if (data.language) {
+    parts.push(`<b>🌐 Language:</b> ${data.language}`);
+  }
+
+  if (data.pageUrl) {
+    parts.push(`<b>📄 Page:</b> ${data.pageUrl}`);
+  }
+
+  if (data.referrer && data.referrer !== 'Direct') {
+    parts.push(`<b>🔗 Referrer:</b> ${data.referrer}`);
+  }
+
+  return parts.join('\n');
 }
 
 function formatEventMessage(event: Event, data: Record<string, string>): string {
@@ -123,9 +198,10 @@ function formatEventMessage(event: Event, data: Record<string, string>): string 
         `<i>${timestamp} (GMT)</i>`;
 
     case 'admin_login':
-      return `<b>🔐 Admin Login</b>\n\n` +
+      let loginMsg = `<b>🔐 Admin Login</b>\n\n` +
         `<b>Dashboard accessed</b>\n` +
         `<i>${timestamp} (GMT)</i>`;
+      return loginMsg;
 
     default:
       return `<b>🔔 Glasswater Notification</b>\n\n<i>${timestamp} (GMT)</i>`;
