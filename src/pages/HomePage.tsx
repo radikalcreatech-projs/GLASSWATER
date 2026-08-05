@@ -163,17 +163,17 @@ export function HomePage() {
           <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <CheckCircle2 className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">{hero.statsProjects}</span>
-            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{hero.statsProjectsLabel}</span>
+            <span className="text-white/70 uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{hero.statsProjectsLabel}</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <Building2 className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">{hero.statsCommercial}</span>
-            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{hero.statsCommercialLabel}</span>
+            <span className="text-white/70 uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{hero.statsCommercialLabel}</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <Star className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
             <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">{hero.statsSatisfaction}</span>
-            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{hero.statsSatisfactionLabel}</span>
+            <span className="text-white/70 uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{hero.statsSatisfactionLabel}</span>
           </div>
         </div>
       </section>

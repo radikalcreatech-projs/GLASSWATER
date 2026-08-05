@@ -19,10 +19,13 @@ export function AboutPage() {
 
           <div className="mb-8 md:mb-10">
             <h2 className="font-serif text-2xl md:text-3xl font-bold text-navy mb-6 text-center">{t('about.values')}</h2>
-            <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-4 md:gap-6 md:overflow-visible no-scrollbar">
-              {cms.values.map(val => (
-                <div key={val} className="min-w-[60%] sm:min-w-[40%] md:min-w-0 snap-center bg-white border border-light-gray p-4 md:p-6 rounded-lg text-center shadow-custom">
-                  <div className="font-serif font-bold text-sm md:text-lg text-navy">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+              {cms.values.map((val, i) => (
+                <div key={val} className="relative p-4 md:p-6 rounded-lg text-center overflow-hidden group"
+                  style={{ background: i % 2 === 0 ? 'var(--color-navy)' : 'var(--color-steel-blue)' }}
+                >
+                  <div className="absolute top-0 left-0 w-1 h-full bg-gold rounded-l-lg" />
+                  <div className="font-serif font-bold text-sm md:text-base text-white leading-snug">
                     {val}
                   </div>
                 </div>
