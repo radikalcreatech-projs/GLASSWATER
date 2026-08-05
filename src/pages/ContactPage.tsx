@@ -6,15 +6,17 @@ import { Phone, MessageCircle, Mail, MapPin, Facebook, Linkedin, Instagram, Load
 import { sanitizeWhatsAppUrl, sanitizeSocialUrl } from '../utils/url';
 import { validateField, patterns } from '../components/FormField';
 import { notify } from '../utils/notifications';
+import { getForms } from '../cms';
 
 export function ContactPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { settings } = useSettings();
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Form state for validation
+  const forms = getForms(lang);
+
   const [formValues, setFormValues] = useState({
     name: '',
     email: '',
@@ -93,7 +95,6 @@ export function ContactPage() {
     const { name, email, phone, service, message } = formValues;
     const enquiryData = { name, email, phone, service, message, timestamp: new Date().toISOString() };
 
-    // Save to localStorage as permanent backup
     try {
       const saved = localStorage.getItem('glasswater_enquiries');
       const enquiries = saved ? JSON.parse(saved) : [];
@@ -101,17 +102,15 @@ export function ContactPage() {
       localStorage.setItem('glasswater_enquiries', JSON.stringify(enquiries.slice(0, 50)));
     } catch (e) { console.error('Failed to save to localStorage:', e); }
 
-    // Fire Telegram notification in background
     notify('contact', { name, email, phone, service, message }).catch((e) => console.error('Telegram notification failed:', e));
 
     setIsSubmitting(false);
 
-    // Always show in-page confirmation
     setSubmitted(true);
     setFormValues({ name: '', email: '', phone: '', service: '', message: '' });
     setErrors({});
     setTouched({});
-    addToast('success', 'Your enquiry has been received! We will respond within 24 hours.', 5000);
+    addToast('success', forms.contactConfirmationText, 5000);
   };
 
   const inputClass = "w-full p-4 border border-light-gray rounded font-sans text-base mb-2 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold bg-bg-body text-text-primary transition-all";
@@ -130,27 +129,26 @@ export function ContactPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
           {submitted ? (
-            /* Confirmation state */
             <div className="bg-white p-8 md:p-12 rounded-lg shadow-custom flex flex-col items-center justify-center text-center">
               <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
                 <CheckCircle2 size={40} className="text-green-600" />
               </div>
-              <h3 className="font-serif text-2xl font-bold text-navy mb-4">{t('contact.thank_you')}</h3>
+              <h3 className="font-serif text-2xl font-bold text-navy mb-4">{forms.contactThankYouTitle}</h3>
               <p className="text-text-secondary text-lg leading-relaxed mb-6">
-                {t('contact.success_msg')}
+                {forms.contactConfirmationText}
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setSubmitted(false)}
                   className="bg-gold text-white px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy transition-colors cursor-pointer"
                 >
-                  {t('contact.send_another')}
+                  {forms.contactSendAnotherLabel}
                 </button>
                 <a
                   href={`mailto:${settings.email}`}
                   className="border border-navy/20 text-navy px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-navy hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <Mail size={16} /> {t('contact.email_us')}
+                  <Mail size={16} /> {forms.contactEmailUsLabel}
                 </a>
               </div>
             </div>
@@ -207,14 +205,9 @@ export function ContactPage() {
                 className={`${inputClass} mb-2`}
               >
                 <option value="">{t('contact.service')}</option>
-                <option>{t('contact.opt_eng')}</option>
-                <option>{t('contact.opt_const')}</option>
-                <option>{t('contact.opt_int')}</option>
-                <option>{t('contact.opt_fin')}</option>
-                <option>{t('contact.opt_water')}</option>
-                <option>{t('contact.opt_pool')}</option>
-                <option>{t('contact.opt_fm')}</option>
-                <option>{t('contact.opt_other')}</option>
+                {forms.contactServiceOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
 
               <textarea

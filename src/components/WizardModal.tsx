@@ -5,15 +5,18 @@ import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
 import { validateField, patterns } from './FormField';
 import { notify } from '../utils/notifications';
+import { getForms } from '../cms';
 
 export function WizardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [step, setStep] = useState(1);
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { settings } = useSettings();
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const forms = getForms(lang);
 
   const [formData, setFormData] = useState({
     type: '', address: '', area: '', floors: '', age: '',
@@ -48,7 +51,6 @@ export function WizardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   };
 
   const handleNext = () => {
-    // Validate current step before advancing
     if (step === 1 && !formData.type) {
       setTouched(prev => ({ ...prev, type: true }));
       setErrors(prev => ({ ...prev, type: t('validation.required') }));
@@ -60,7 +62,6 @@ export function WizardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   const handlePrev = () => setStep(s => Math.max(1, s - 1));
 
   const handleSubmit = () => {
-    // Validate required fields
     const newErrors: Record<string, string> = {};
     const newTouched: Record<string, boolean> = {};
 
@@ -115,7 +116,6 @@ Note: Please email any photos, plans, or documents to ${settings.email || 'glass
 
     const mailtoUrl = `mailto:${settings.email || 'glasswaterfits@gmail.com'}?subject=${subject}&body=${body}`;
 
-    // Fire-and-forget Telegram notification
     notify('consultation', {
       name: formData.name,
       type: formData.type,
@@ -125,7 +125,6 @@ Note: Please email any photos, plans, or documents to ${settings.email || 'glass
     }).catch((e) => console.error('Telegram notification failed:', e));
     addToast('success', t('toast.form_submitted'), 6000);
 
-    // Small delay to let toast render
     setTimeout(() => {
       window.location.href = mailtoUrl;
     }, 400);
@@ -153,12 +152,12 @@ Note: Please email any photos, plans, or documents to ${settings.email || 'glass
         <h2 className="font-serif text-2xl font-bold text-navy mb-6">{t('wizard.title')}</h2>
 
         <div className="flex justify-between mb-8 overflow-x-auto">
-          {[1, 2, 3, 4, 5, 6].map(num => (
+          {forms.wizardStepLabels.map((label, num) => (
             <div
               key={num}
-              className={`flex-1 text-center py-2 border-b-4 text-sm font-semibold whitespace-nowrap px-2 ${step === num ? 'border-gold text-navy' : 'border-light-gray text-text-secondary'}`}
+              className={`flex-1 text-center py-2 border-b-4 text-sm font-semibold whitespace-nowrap px-2 ${step === num + 1 ? 'border-gold text-navy' : 'border-light-gray text-text-secondary'}`}
             >
-              {num}. {['Type', 'Property', 'Scope', 'Budget', 'Files', 'Contact'][num-1]}
+              {num + 1}. {label}
             </div>
           ))}
         </div>
@@ -174,11 +173,9 @@ Note: Please email any photos, plans, or documents to ${settings.email || 'glass
               onBlur={() => blurField('type')}
             >
               <option value="">{t('wizard.type_select')}</option>
-              <option value="new-build">{t('wizard.new_build')}</option>
-              <option value="renovation">{t('wizard.renovation')}</option>
-              <option value="fit-out">{t('wizard.fit_out')}</option>
-              <option value="maintenance">{t('wizard.maintenance')}</option>
-              <option value="waterproofing">{t('wizard.waterproofing')}</option>
+              {forms.wizardTypeOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
             {touched.type && errors.type && (
               <p className="text-xs text-red-600 font-medium mb-3">{errors.type}</p>
@@ -217,22 +214,12 @@ Note: Please email any photos, plans, or documents to ${settings.email || 'glass
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step3')}</h3>
             <textarea className={`${inputClass} resize-y h-24`} placeholder={t('wizard.scope_desc')} value={formData.scope} onChange={e => updateForm('scope', e.target.value)}></textarea>
             <div className="flex gap-4 flex-wrap mb-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" checked={formData.electrical} onChange={() => toggleCheckbox('electrical')} />
-                {t('wizard.electrical')}
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" checked={formData.plumbing} onChange={() => toggleCheckbox('plumbing')} />
-                {t('wizard.plumbing')}
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" checked={formData.carpentry} onChange={() => toggleCheckbox('carpentry')} />
-                {t('wizard.carpentry')}
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" checked={formData.painting} onChange={() => toggleCheckbox('painting')} />
-                {t('wizard.painting')}
-              </label>
+              {forms.wizardScopeChecks.map(check => (
+                <label key={check.value} className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 text-gold focus:ring-gold" checked={!!(formData as any)[check.value]} onChange={() => toggleCheckbox(check.value)} />
+                  {check.label}
+                </label>
+              ))}
             </div>
             <div className="flex justify-between mt-6">
               <button className="bg-light-gray text-navy px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-gray-300 transition-colors cursor-pointer" onClick={handlePrev}>
@@ -251,18 +238,16 @@ Note: Please email any photos, plans, or documents to ${settings.email || 'glass
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step4')}</h3>
             <select className={inputClass} value={formData.budget} onChange={e => updateForm('budget', e.target.value)}>
               <option value="">{t('wizard.budget_select')}</option>
-              <option value="under-10k">{t('wizard.under_10k')}</option>
-              <option value="10-50k">{t('wizard.budget_1')}</option>
-              <option value="50-100k">{t('wizard.budget_2')}</option>
-              <option value="100-500k">{t('wizard.budget_3')}</option>
-              <option value="over-500k">{t('wizard.over_500k')}</option>
+              {forms.wizardBudgetOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
             <input type="date" className={inputClass} placeholder={t('wizard.start')} value={formData.startDate} onChange={e => updateForm('startDate', e.target.value)} />
             <select className={inputClass} value={formData.urgency} onChange={e => updateForm('urgency', e.target.value)}>
               <option value="">{t('wizard.urgency_select')}</option>
-              <option value="immediate">{t('wizard.immediate')}</option>
-              <option value="soon">{t('wizard.soon')}</option>
-              <option value="planned">{t('wizard.planned')}</option>
+              {forms.wizardUrgencyOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
             <div className="flex justify-between mt-6">
               <button className="bg-light-gray text-navy px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-gray-300 transition-colors cursor-pointer" onClick={handlePrev}>
@@ -275,20 +260,11 @@ Note: Please email any photos, plans, or documents to ${settings.email || 'glass
           </div>
         )}
 
-        {/* Step 5 — Files (replaced with info message) */}
+        {/* Step 5 — Files (CMS-driven instructions) */}
         {step === 5 && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <h3 className="font-sans font-semibold text-xl mb-4">{t('wizard.step5')}</h3>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-4">
-              <p className="text-blue-800 text-sm leading-relaxed">
-                Please email any photos, floor plans, or project documents (PDFs, DWGs, images) to{' '}
-                <strong className="text-blue-900">{settings.email || 'glasswaterfits@gmail.com'}</strong>{' '}
-                after submitting this request. Reference your name in the subject line so we can match your files to your quote request.
-              </p>
-            </div>
-            <p className="text-sm text-text-secondary mt-2">
-              Accepted formats: images, PDFs, AutoCAD DWG files. Max 25MB total per email.
-            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-4" dangerouslySetInnerHTML={{ __html: forms.wizardFileInstructions }} />
             <div className="flex justify-between mt-6">
               <button className="bg-light-gray text-navy px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-gray-300 transition-colors cursor-pointer" onClick={handlePrev}>
                 <ArrowLeft size={16} /> {t('wizard.prev')}

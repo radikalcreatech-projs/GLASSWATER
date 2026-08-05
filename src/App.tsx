@@ -16,6 +16,7 @@ import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { ToastProvider } from './context/ToastContext';
 import { MessageCircle, FileText } from 'lucide-react';
 import { sanitizeWhatsAppUrl } from './utils/url';
+import { getForms } from './cms';
 
 // --- Lazy-loaded Pages (each becomes its own async chunk) ---
 const HomePage     = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
@@ -57,7 +58,6 @@ function PageRenderer({ onOpenWizard }: { onOpenWizard: () => void }) {
           case 'portal':   return <PortalPage />;
           case 'post':     return <PostPage />;
           case 'project':  return <ProjectDetailPage />;
-          // Still routable even if not in the header
           case 'faq':      return <FAQPage />;
           case 'reviews':  return <ReviewsPage />;
           case 'careers':  return <CareersPage />;
@@ -73,9 +73,9 @@ function MainApp() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const { settings } = useSettings();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const forms = getForms(lang);
 
-  // Migrate old Cloudinary URLs or local paths in localStorage to direct Google Drive URLs
   useEffect(() => {
     try {
       const keys = [];
@@ -88,8 +88,7 @@ function MainApp() {
         if (key && key.startsWith('glasswater_')) {
           let val = localStorage.getItem(key);
           if (val && (val.includes('cloudinary.com') || val.includes('/images/'))) {
-            // Replace Cloudinary URLs first
-            val = val.replace(/https:\/\/res\.cloudinary\.com\/[^"'\s]*/g, (match) => {
+            val = val.replace(/https:\/\/res\.cloudinary\.com\/[^"'\s]*/g, (match: string) => {
               if (match.includes('IMG-20260705-WA0089_f3agy0')) return 'https://lh3.googleusercontent.com/d/17OEVNBh2mvO3MNCzogUGhSgTuTHh2BQk';
               if (match.includes('IMG-20260705-WA0092_q6v7sc')) return 'https://lh3.googleusercontent.com/d/16rYbGyUo4aXCqVO3fsKTyL4NI7Ww8rnI';
               if (match.includes('IMG-20260705-WA0094_dqxgcr')) return 'https://lh3.googleusercontent.com/d/1yybAmLVE2csJ7mUpp1kqgYMA_Jsk4aeZ';
@@ -98,8 +97,7 @@ function MainApp() {
               return match;
             });
 
-            // Replace local image paths
-            val = val.replace(/\/images\/[a-zA-Z0-9_-]+\.jpg/g, (match) => {
+            val = val.replace(/\/images\/[a-zA-Z0-9_-]+\.jpg/g, (match: string) => {
               if (match.includes('bathroom-tub')) return 'https://lh3.googleusercontent.com/d/17OEVNBh2mvO3MNCzogUGhSgTuTHh2BQk';
               if (match.includes('kitchen-sink')) return 'https://lh3.googleusercontent.com/d/16rYbGyUo4aXCqVO3fsKTyL4NI7Ww8rnI';
               if (match.includes('water-filter')) return 'https://lh3.googleusercontent.com/d/1yybAmLVE2csJ7mUpp1kqgYMA_Jsk4aeZ';
@@ -136,7 +134,7 @@ function MainApp() {
         onClick={() => setIsWizardOpen(true)}
         className="fixed bottom-[90px] md:bottom-[100px] right-4 md:right-6 bg-gold text-white px-4 py-2.5 md:px-6 md:py-4 rounded-full font-semibold shadow-custom hover:scale-105 hover:bg-navy transition-all z-50 flex items-center gap-2 md:gap-3 print:hidden"
       >
-        <FileText size={16} className="md:w-5 md:h-5" /> <span className="uppercase tracking-widest text-[0.6rem] md:text-sm">{t('quote.sticky')}</span>
+        <FileText size={16} className="md:w-5 md:h-5" /> <span className="uppercase tracking-widest text-[0.6rem] md:text-sm">{forms.quoteButtonLabel}</span>
       </button>
 
       <a
