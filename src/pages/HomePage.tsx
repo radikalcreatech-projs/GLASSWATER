@@ -4,6 +4,7 @@ import { useI18n } from '../context/I18nContext';
 import { useNavigation } from '../context/NavigationContext';
 import { CheckCircle2, Building2, Star, ArrowRight } from 'lucide-react';
 import { getProjects, getPosts, defaultReviews } from '../data';
+import { getHomeHero, getHomeAbout } from '../cms';
 import { RainCanvas } from '../components/RainCanvas';
 
 type Project = { id: string; title: string; category: string; description: string; image: string; [key: string]: unknown };
@@ -81,28 +82,44 @@ function LazyPostCard({ post, onClick }: { key?: Key; post: Post; onClick: () =>
 export function HomePage() {
   const { t, lang } = useI18n();
   const { navigate } = useNavigation();
-  const [reviews, setReviews] = useState<any[]>([lang]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [localProjects, setLocalProjects] = useState(getProjects(lang));
   const [localPosts, setLocalPosts] = useState(getPosts(lang));
+  const hero = getHomeHero(lang);
+  const homeAbout = getHomeAbout(lang);
 
   useEffect(() => {
     const saved = localStorage.getItem('glasswater_reviews');
     if (saved) {
       try {
         setReviews(JSON.parse(saved));
-      } catch (e) {}
+      } catch (e) { console.error('Failed to load reviews:', e); }
     } else {
       setReviews(defaultReviews);
       localStorage.setItem('glasswater_reviews', JSON.stringify(defaultReviews));
     }
     try {
       const p = localStorage.getItem("glasswater_projects");
-      if (p) { const parsed = JSON.parse(p); setLocalProjects([...parsed.filter((p: any) => !getProjects(lang).find(dp => dp.id === p.id)), ...getProjects(lang)]); } else { setLocalProjects(getProjects(lang)); }
-    } catch (e) {}
+      if (p) {
+        const parsed = JSON.parse(p);
+        if (Array.isArray(parsed)) {
+          setLocalProjects([...parsed.filter((p: any) => !getProjects(lang).find(dp => dp.id === p.id)), ...getProjects(lang)]);
+        } else {
+          setLocalProjects(getProjects(lang));
+        }
+      } else { setLocalProjects(getProjects(lang)); }
+    } catch (e) { console.error('Failed to load projects:', e); setLocalProjects(getProjects(lang)); }
     try {
       const postsStr = localStorage.getItem("glasswater_posts");
-      if (postsStr) { const parsed = JSON.parse(postsStr); setLocalPosts([...parsed.filter((p: any) => !getPosts(lang).find(dp => dp.slug === p.slug)), ...getPosts(lang)]); } else { setLocalPosts(getPosts(lang)); }
-    } catch (e) {}
+      if (postsStr) {
+        const parsed = JSON.parse(postsStr);
+        if (Array.isArray(parsed)) {
+          setLocalPosts([...parsed.filter((p: any) => !getPosts(lang).find(dp => dp.slug === p.slug)), ...getPosts(lang)]);
+        } else {
+          setLocalPosts(getPosts(lang));
+        }
+      } else { setLocalPosts(getPosts(lang)); }
+    } catch (e) { console.error('Failed to load posts:', e); setLocalPosts(getPosts(lang)); }
   }, [lang]);
 
   return (
@@ -118,23 +135,23 @@ export function HomePage() {
         <div className="relative z-10 max-w-5xl mx-auto text-center my-4 md:my-10">
           <h1 
             className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-navy leading-tight mb-4 md:mb-8"
-            dangerouslySetInnerHTML={{ __html: t('home.hero.title') }}
+            dangerouslySetInnerHTML={{ __html: hero.headingHtml }}
           />
           <p className="text-sm sm:text-base md:text-xl lg:text-2xl text-steel-blue mb-5 md:mb-12 font-light max-w-3xl mx-auto leading-relaxed line-clamp-3 md:line-clamp-none">
-            {t('home.hero.sub')}
+            {hero.subheading}
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3 md:gap-6">
             <button 
               onClick={() => navigate('contact')}
               className="w-full sm:w-auto bg-gold text-white px-5 py-3 md:px-10 md:py-4 rounded font-semibold uppercase tracking-wider md:tracking-widest hover:bg-navy transition-all shadow-custom text-xs md:text-sm"
             >
-              {t('home.hero.cta1')}
+              {hero.cta1Text}
             </button>
             <button 
               onClick={() => navigate('projects')}
               className="w-full sm:w-auto bg-white/80 backdrop-blur border border-navy/20 text-navy px-5 py-3 md:px-10 md:py-4 rounded font-semibold uppercase tracking-wider md:tracking-widest hover:bg-navy hover:text-white transition-all shadow-custom text-xs md:text-sm"
             >
-              {t('home.hero.cta2')}
+              {hero.cta2Text}
             </button>
           </div>
         </div>
@@ -145,18 +162,18 @@ export function HomePage() {
         <div className="max-w-6xl mx-auto px-2 md:px-4 grid grid-cols-3 gap-1 sm:gap-2 md:gap-8">
           <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <CheckCircle2 className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
-            <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">150+</span>
-            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.proj')}</span>
+            <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">{hero.statsProjects}</span>
+            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{hero.statsProjectsLabel}</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <Building2 className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
-            <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">50+</span>
-            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.comm')}</span>
+            <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">{hero.statsCommercial}</span>
+            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{hero.statsCommercialLabel}</span>
           </div>
           <div className="flex flex-col items-center justify-center gap-1 md:gap-2">
             <Star className="text-gold w-4.5 h-4.5 md:w-8 md:h-8" /> 
-            <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">90%</span>
-            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{t('home.stats.sat')}</span>
+            <span className="font-serif text-lg sm:text-2xl md:text-3xl font-bold">{hero.statsSatisfaction}</span>
+            <span className="text-steel-blue uppercase tracking-widest text-[0.5rem] sm:text-[0.65rem] md:text-xs font-semibold">{hero.statsSatisfactionLabel}</span>
           </div>
         </div>
       </section>
@@ -166,16 +183,16 @@ export function HomePage() {
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="uppercase tracking-[0.3em] text-gold text-xs font-semibold mb-4">{t('home.about_label')}</h2>
           <h3 className="font-serif text-3xl md:text-4xl font-bold text-navy mb-4 leading-tight">
-            Building the Future with Precision
+            {homeAbout.heading}
           </h3>
           <p className="text-base md:text-lg text-steel-blue max-w-3xl mx-auto leading-relaxed mb-6 line-clamp-4 md:line-clamp-none">
-            {t('about.desc')}
+            {homeAbout.description}
           </p>
           <button 
             onClick={() => navigate('about')}
             className="bg-transparent border border-gold text-gold px-8 py-3 rounded font-semibold uppercase tracking-widest hover:bg-gold hover:text-white transition-all text-xs"
           >
-            {t('home.quick.read')}
+            {homeAbout.readMoreLabel}
           </button>
         </div>
       </section>

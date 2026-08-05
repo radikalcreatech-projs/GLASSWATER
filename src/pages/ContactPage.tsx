@@ -99,10 +99,10 @@ export function ContactPage() {
       const enquiries = saved ? JSON.parse(saved) : [];
       enquiries.unshift(enquiryData);
       localStorage.setItem('glasswater_enquiries', JSON.stringify(enquiries.slice(0, 50)));
-    } catch { /* localStorage may be unavailable */ }
+    } catch (e) { console.error('Failed to save to localStorage:', e); }
 
     // Fire Telegram notification in background
-    notify('contact', { name, email, phone, service, message }).catch(() => {});
+    notify('contact', { name, email, phone, service, message }).catch((e) => console.error('Telegram notification failed:', e));
 
     setIsSubmitting(false);
 

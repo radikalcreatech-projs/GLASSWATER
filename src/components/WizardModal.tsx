@@ -122,7 +122,7 @@ Note: Please email any photos, plans, or documents to ${settings.email || 'glass
       budget: formData.budget,
       urgency: formData.urgency,
       address: formData.address,
-    }).catch(() => {});
+    }).catch((e) => console.error('Telegram notification failed:', e));
     addToast('success', t('toast.form_submitted'), 6000);
 
     // Small delay to let toast render

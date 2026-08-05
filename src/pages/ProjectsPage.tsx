@@ -77,9 +77,13 @@ export function ProjectsPage() {
     const saved = localStorage.getItem('glasswater_projects');
     if (saved) {
       try {
-        const parsed = JSON.parse(saved); 
-        setProjects([...parsed, ...getProjects(lang).filter(p => !parsed.find((op: any) => op.id === p.id))]);
-      } catch (e) { console.error('Failed to load projects from localStorage:', e); }
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setProjects([...parsed, ...getProjects(lang).filter(p => !parsed.find((op: any) => op.id === p.id))]);
+        } else {
+          setProjects(getProjects(lang));
+        }
+      } catch (e) { console.error('Failed to load projects from localStorage:', e); setProjects(getProjects(lang)); }
     } else {
       setProjects(getProjects(lang));
     }
