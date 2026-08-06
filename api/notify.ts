@@ -118,7 +118,6 @@ function formatEventMessage(event: Event, data: Record<string, string>): string 
       return `<b>New Enquiry</b>\n\n<b>From:</b> ${e(data.name||'Unknown')}\n<b>Email:</b> ${e(data.email||'N/A')}\n<b>Phone:</b> ${e(data.phone||'N/A')}\n<b>Service:</b> ${e(data.service||'Not specified')}\n\n<b>Message:</b>\n${e(data.message||'No message')}\n\n<i>${timestamp} (GMT)</i>`;
 
     case 'consultation': {
-      // Build service checks list
       const services: string[] = [];
       if (data.electrical === 'true') services.push('Electrical');
       if (data.plumbing === 'true') services.push('Plumbing');
@@ -152,8 +151,56 @@ function formatEventMessage(event: Event, data: Record<string, string>): string 
       return `<b>${stars} New Review</b>\n\n<b>${e(data.name||'Anonymous')}</b> rated ${data.rating||'?'}/5\n<i>"${e(data.text||'')}"</i>\n\n<i>${timestamp} (GMT)</i>`;
     }
 
-    case 'document':
-      return `<b>Document Created</b>\n\n<b>Type:</b> ${e(data.type||'N/A')}\n<b>Code:</b> <code>${e(data.code||'N/A')}</code>\n<b>Client:</b> ${e(data.client||'N/A')}\n<b>Amount:</b> GHS ${e(data.amount||'0')}\n\n<i>${timestamp} (GMT)</i>`;
+    case 'document': {
+      // Parse line items if provided (JSON string)
+      let itemsStr = '';
+      if (data.items) {
+        try {
+          const items = JSON.parse(data.items);
+          if (Array.isArray(items) && items.length > 0) {
+            itemsStr = '\n<b>--- Line Items ---</b>\n';
+            items.forEach((item: any, i: number) => {
+              const desc = e(item.description || `Item ${i+1}`);
+              const qty = item.quantity || 0;
+              const price = Number(item.unitPrice || 0).toFixed(2);
+              const total = Number(item.total || 0).toFixed(2);
+              itemsStr += `${desc} — ${qty} x GHS ${price} = <b>GHS ${total}</b>\n`;
+            });
+          }
+        } catch {}
+      }
+
+      // Build links section
+      let links = '';
+      if (data.code) {
+        const portalUrl = data.siteUrl || 'https://glasswater.com';
+        links = `\n<b>Share with client:</b>\n${portalUrl}/#portal?code=${e(data.code)}`;
+        if (data.fileUrl) {
+          links += `\n<b>Download:</b> ${e(data.fileUrl)}`;
+        }
+      }
+
+      let discountLine = '';
+      if (data.discountType && data.discountValue) {
+        const dt = data.discountType === 'percentage' ? '%' : 'GHS';
+        discountLine = `\n<b>Discount:</b> ${e(data.discountValue)}${dt}`;
+      }
+
+      let notesLine = '';
+      if (data.notes) {
+        notesLine = `\n\n<b>Notes:</b> ${e(data.notes)}`;
+      }
+
+      return `<b>${e(data.type||'Document')} Created</b>\n\n` +
+        `<b>Code:</b> <code>${e(data.code||'N/A')}</code>\n` +
+        `<b>Client:</b> ${e(data.client||'N/A')}\n` +
+        `<b>Title:</b> ${e(data.title||'N/A')}\n` +
+        `<b>Status:</b> ${e(data.status||'Draft')}\n` +
+        `<b>Amount:</b> GHS ${e(data.amount||'0')}${discountLine}` +
+        itemsStr +
+        notesLine +
+        links + `\n\n<i>${timestamp} (GMT)</i>`;
+    }
 
     case 'admin_login':
       return `<b>Admin Login</b>\n\n<b>Dashboard accessed</b>\n<i>${timestamp} (GMT)</i>`;

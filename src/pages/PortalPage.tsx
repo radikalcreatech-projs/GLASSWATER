@@ -81,12 +81,37 @@ export function PortalPage() {
         return;
       }
 
+      // Force desktop/print-like layout in the live DOM before capture
+      const originalBorder = element.style.border;
+      const originalShadow = element.style.boxShadow;
+      const originalPadding = element.style.padding;
+      const originalWidth = element.style.width;
+      const originalMaxWidth = element.style.maxWidth;
+
+      element.style.width = '1024px';
+      element.style.maxWidth = '1024px';
+      element.style.border = 'none';
+      element.style.boxShadow = 'none';
+      element.style.padding = '0';
+      element.classList.remove('p-4', 'sm:p-6', 'md:p-12');
+
+      // Wait a tick for styles to apply
+      await new Promise(resolve => setTimeout(resolve, 50));
+
       // Use html2canvas-pro which supports oklch/oklab CSS color functions
       const canvas = await html2canvasPro(element, {
         scale: 2,
         useCORS: true,
         windowWidth: 1024,
       });
+
+      // Revert styles
+      element.style.width = originalWidth;
+      element.style.maxWidth = originalMaxWidth;
+      element.style.border = originalBorder;
+      element.style.boxShadow = originalShadow;
+      element.style.padding = originalPadding;
+      element.classList.add('p-4', 'sm:p-6', 'md:p-12');
 
       // Create PDF with jsPDF
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
@@ -208,7 +233,7 @@ export function PortalPage() {
 
           <div className="flex flex-col sm:flex-row print:flex-row justify-between items-start sm:items-center print:items-center border-b border-light-gray pb-8 mb-8 gap-6">
             <div className="flex items-center gap-4">
-              <img src={settings.logoUrl} alt="Glasswater Logo" className="h-16 w-auto object-contain" />
+              <img src={settings.logoUrl} alt="Glasswater Logo" className="h-16 w-auto object-contain" style={{ height: '64px', maxWidth: '250px', objectFit: 'contain' }} />
               <div className="leading-none">
                 <div className="font-serif text-xl md:text-2xl font-bold text-navy tracking-tight">{settings.companyName ? settings.companyName.split(' ')[0] : 'GLASSWATER'}</div>
                 <div className="font-sans text-[9px] font-normal text-steel-blue tracking-widest mt-1 uppercase">{settings.companyName ? settings.companyName.substring(settings.companyName.indexOf(' ') + 1) : 'Fit-Outs & Co. Ltd.'}</div>
