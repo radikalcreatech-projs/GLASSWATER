@@ -1,9 +1,8 @@
 /**
  * Glasswater — Telegram Notification Client
  * 
- * Fire-and-forget helper that sends events to the Vercel Serverless Function
- * proxy at /api/notify. Never blocks the user, never throws, never
- * exposes credentials. All security handled server-side.
+ * Sends events to the Vercel Serverless Function proxy at /api/notify.
+ * Returns true/false so the UI can wait for confirmation before showing success.
  */
 
 type NotificationEvent = 'contact' | 'consultation' | 'review' | 'document' | 'admin_login';
@@ -30,33 +29,39 @@ function getClientContext(): Record<string, string> {
   else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = 'Safari';
   else if (/OPR|Opera/i.test(ua)) browser = 'Opera';
 
-  const screenSize = `${window.screen.width}×${window.screen.height}`;
+  const screenSize = `${window.screen.width}x${window.screen.height}`;
   const language = navigator.language || 'unknown';
   const referrer = document.referrer ? new URL(document.referrer).hostname : 'Direct';
   const pageUrl = window.location.href;
-  const viewport = `${window.innerWidth}×${window.innerHeight}`;
+  const viewport = `${window.innerWidth}x${window.innerHeight}`;
 
   return { platform, device, browser, screenSize, viewport, language, referrer, pageUrl };
 }
 
 /**
- * Sends a notification event to the Telegram bot via the server proxy.
- * Fire-and-forget — never blocks the UI, never shows errors to the user.
+ * Sends a notification to Telegram via the server proxy.
+ * Returns true if the server confirmed delivery, false otherwise.
  * 
  * @param event - The event type (contact, consultation, review, document, admin_login)
  * @param data  - Key-value pairs for the notification message
  */
-export async function notify(event: NotificationEvent, data: Record<string, string>): Promise<void> {
-  // Attach client context to the data
+export async function notify(event: NotificationEvent, data: Record<string, string>): Promise<boolean> {
   const enrichedData = { ...data, ...getClientContext() };
 
   try {
-    await fetch('/api/notify', {
+    const res = await fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event, data: enrichedData }),
     });
+    
+    if (res.ok) {
+      const json = await res.json().catch(() => ({}));
+      return !!(json && json.ok);
+    }
+    return false;
   } catch (err) {
     console.error(`[Glasswater Notify] Failed to send ${event} notification:`, err);
+    return false;
   }
 }

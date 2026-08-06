@@ -1,18 +1,10 @@
 /**
  * Vercel Serverless Function — Telegram Notification Proxy
- * 
- * POST /api/notify
- * Body: { event: string, data: Record<string, string> }
- * 
- * Environment variables (set in Vercel dashboard, NO VITE_ prefix):
- *   TELEGRAM_BOT_TOKEN — Your bot token from @BotFather
- *   TELEGRAM_CHAT_ID   — Your chat ID from getUpdates
  */
 
 const VALID_EVENTS = ['contact', 'consultation', 'review', 'document', 'admin_login'] as const;
 type Event = typeof VALID_EVENTS[number];
 
-// HTML entity codes as character sequences (immune to formatter)
 const AMP = String.fromCharCode(38);
 const ESC_AMP = AMP + 'amp;';
 const ESC_LT = AMP + 'lt;';
@@ -31,10 +23,7 @@ function escapeHTML(str: string): string {
 }
 
 interface GeoData {
-  city: string;
-  region: string;
-  country: string;
-  isp: string;
+  city: string; region: string; country: string; isp: string;
 }
 
 async function getGeoLocation(ip: string): Promise<GeoData | null> {
@@ -43,14 +32,9 @@ async function getGeoLocation(ip: string): Promise<GeoData | null> {
     const res = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country,isp`);
     const data: any = await res.json().catch(() => null);
     if (data && data.status !== 'fail') {
-      return {
-        city: data.city || '',
-        region: data.regionName || '',
-        country: data.country || '',
-        isp: data.isp || '',
-      };
+      return { city: data.city || '', region: data.regionName || '', country: data.country || '', isp: data.isp || '' };
     }
-  } catch { /* geo lookup failed — non-critical */ }
+  } catch {}
   return null;
 }
 
@@ -61,7 +45,6 @@ async function sendTelegramMessage(botToken: string, chatId: string, text: strin
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
     });
-
     const data: any = await res.json().catch(() => ({}));
     if (res.ok && data.ok) return { ok: true };
 
@@ -74,9 +57,8 @@ async function sendTelegramMessage(botToken: string, chatId: string, text: strin
       });
       const retryData: any = await retryRes.json().catch(() => ({}));
       if (retryRes.ok && retryData.ok) return { ok: true };
-      return { ok: false, error: retryData.description || 'Plain text fallback also failed' };
+      return { ok: false, error: retryData.description || 'Plain text fallback failed' };
     }
-
     return { ok: false, error: data.description || 'Unknown Telegram API error' };
   } catch (err: any) {
     return { ok: false, error: err.message || 'Network error' };
@@ -102,15 +84,15 @@ export default async function handler(req: any, res: any) {
 
   const geo = await geoPromise;
   if (geo) {
-    const locationParts = [geo.city, geo.region, geo.country].filter(Boolean).join(', ');
-    message += `\n<b>Location:</b> ${escapeHTML(locationParts)}${geo.isp ? ' — ' + escapeHTML(geo.isp) : ''}`;
+    const loc = [geo.city, geo.region, geo.country].filter(Boolean).join(', ');
+    message += `\n<b>Location:</b> ${escapeHTML(loc)}${geo.isp ? ' — ' + escapeHTML(geo.isp) : ''}`;
   } else {
     message += `\n<b>IP:</b> <code>${escapeHTML(clientIP)}</code>`;
   }
 
   const result = await sendTelegramMessage(botToken, chatId, message);
   if (!result.ok) {
-    console.error('[Notify] Failed to send:', result.error);
+    console.error(`[Notify] Failed (chat ${chatId}):`, result.error);
     return res.status(502).json({ error: result.error || 'Failed to send notification' });
   }
   return res.status(200).json({ ok: true });
@@ -133,17 +115,49 @@ function formatEventMessage(event: Event, data: Record<string, string>): string 
 
   switch (event) {
     case 'contact':
-      return `<b>New Enquiry</b>\n\n<b>From:</b> ${e(data.name || 'Unknown')}\n<b>Email:</b> ${e(data.email || 'N/A')}\n<b>Phone:</b> ${e(data.phone || 'N/A')}\n<b>Service:</b> ${e(data.service || 'Not specified')}\n\n<b>Message:</b>\n${e(data.message || 'No message')}\n\n<i>${timestamp} (GMT)</i>`;
-    case 'consultation':
-      return `<b>Consultation Request</b>\n\n<b>From:</b> ${e(data.name || 'Unknown')}\n<b>Type:</b> ${e(data.type || 'N/A')}\n<b>Budget:</b> ${e(data.budget || 'Not specified')}\n<b>Urgency:</b> ${e(data.urgency || 'N/A')}\n<b>Address:</b> ${e(data.address || 'N/A')}\n\n<i>${timestamp} (GMT)</i>`;
-    case 'review': {
-      const stars = '⭐'.repeat(Math.min(5, parseInt(data.rating || '0')));
-      return `<b>${stars} New Review</b>\n\n<b>${e(data.name || 'Anonymous')}</b> rated ${data.rating || '?'}/5\n<i>"${e(data.text || '')}"</i>\n\n<i>${timestamp} (GMT)</i>`;
+      return `<b>New Enquiry</b>\n\n<b>From:</b> ${e(data.name||'Unknown')}\n<b>Email:</b> ${e(data.email||'N/A')}\n<b>Phone:</b> ${e(data.phone||'N/A')}\n<b>Service:</b> ${e(data.service||'Not specified')}\n\n<b>Message:</b>\n${e(data.message||'No message')}\n\n<i>${timestamp} (GMT)</i>`;
+
+    case 'consultation': {
+      // Build service checks list
+      const services: string[] = [];
+      if (data.electrical === 'true') services.push('Electrical');
+      if (data.plumbing === 'true') services.push('Plumbing');
+      if (data.carpentry === 'true') services.push('Carpentry');
+      if (data.painting === 'true') services.push('Painting');
+      const serviceLine = services.length > 0 ? services.join(', ') : 'Not specified';
+
+      return `<b>Consultation Request</b>\n\n` +
+        `<b>From:</b> ${e(data.name||'Unknown')}\n` +
+        `<b>Email:</b> ${e(data.email||'N/A')}\n` +
+        `<b>Phone:</b> ${e(data.phone||'N/A')}\n` +
+        `<b>Contact via:</b> ${e(data.contactMethod||'email')}\n\n` +
+        `<b>-- Project Details --</b>\n` +
+        `<b>Type:</b> ${e(data.type||'N/A')}\n` +
+        `<b>Scope:</b> ${e(data.scope||'Not specified')}\n` +
+        `<b>Services Needed:</b> ${serviceLine}\n\n` +
+        `<b>-- Property --</b>\n` +
+        `<b>Address:</b> ${e(data.address||'N/A')}\n` +
+        `<b>Area:</b> ${e(data.area||'N/A')} sqm\n` +
+        `<b>Floors:</b> ${e(data.floors||'N/A')}\n` +
+        `<b>Building Age:</b> ${e(data.age||'N/A')} years\n\n` +
+        `<b>-- Budget & Timeline --</b>\n` +
+        `<b>Budget:</b> ${e(data.budget||'Not specified')}\n` +
+        `<b>Start Date:</b> ${e(data.startDate||'N/A')}\n` +
+        `<b>Urgency:</b> ${e(data.urgency||'N/A')}\n\n` +
+        `<i>${timestamp} (GMT)</i>`;
     }
+
+    case 'review': {
+      const stars = '⭐'.repeat(Math.min(5, parseInt(data.rating||'0')));
+      return `<b>${stars} New Review</b>\n\n<b>${e(data.name||'Anonymous')}</b> rated ${data.rating||'?'}/5\n<i>"${e(data.text||'')}"</i>\n\n<i>${timestamp} (GMT)</i>`;
+    }
+
     case 'document':
-      return `<b>Document Created</b>\n\n<b>Type:</b> ${e(data.type || 'N/A')}\n<b>Code:</b> <code>${e(data.code || 'N/A')}</code>\n<b>Client:</b> ${e(data.client || 'N/A')}\n<b>Amount:</b> GHS ${e(data.amount || '0')}\n\n<i>${timestamp} (GMT)</i>`;
+      return `<b>Document Created</b>\n\n<b>Type:</b> ${e(data.type||'N/A')}\n<b>Code:</b> <code>${e(data.code||'N/A')}</code>\n<b>Client:</b> ${e(data.client||'N/A')}\n<b>Amount:</b> GHS ${e(data.amount||'0')}\n\n<i>${timestamp} (GMT)</i>`;
+
     case 'admin_login':
       return `<b>Admin Login</b>\n\n<b>Dashboard accessed</b>\n<i>${timestamp} (GMT)</i>`;
+
     default:
       return `<b>Glasswater Notification</b>\n\n<i>${timestamp} (GMT)</i>`;
   }
