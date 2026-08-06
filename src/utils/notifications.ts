@@ -8,14 +8,10 @@
 
 type NotificationEvent = 'contact' | 'consultation' | 'review' | 'document' | 'admin_login';
 
-// Client-side debounce: prevent duplicate notifications within 60 seconds
-const sentCache = new Map<string, number>();
-
 /** Collects browser, device, and page context from the client */
 function getClientContext(): Record<string, string> {
   const ua = navigator.userAgent;
   
-  // Simple platform detection
   let platform = 'Unknown';
   if (/(iPhone|iPad|iPod)/i.test(ua)) platform = 'iPhone/iPad';
   else if (/Android/i.test(ua)) platform = 'Android';
@@ -23,12 +19,10 @@ function getClientContext(): Record<string, string> {
   else if (/Mac/i.test(ua)) platform = 'Mac';
   else if (/Linux/i.test(ua)) platform = 'Linux';
 
-  // Device type
   let device = 'Desktop';
   if (/(iPhone|Android.*Mobile|iPad)/i.test(ua)) device = 'Mobile';
   else if (/iPad|Android(?!.*Mobile)/i.test(ua)) device = 'Tablet';
 
-  // Browser detection
   let browser = 'Unknown';
   if (/Edg\//i.test(ua)) browser = 'Edge';
   else if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) browser = 'Chrome';
@@ -53,12 +47,6 @@ function getClientContext(): Record<string, string> {
  * @param data  - Key-value pairs for the notification message
  */
 export async function notify(event: NotificationEvent, data: Record<string, string>): Promise<void> {
-  // Prevent duplicate notifications within 60 seconds
-  const cacheKey = `${event}:${JSON.stringify(data).slice(0, 80)}`;
-  const lastSent = sentCache.get(cacheKey);
-  if (lastSent && Date.now() - lastSent < 60000) return;
-  sentCache.set(cacheKey, Date.now());
-
   // Attach client context to the data
   const enrichedData = { ...data, ...getClientContext() };
 

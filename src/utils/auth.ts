@@ -1,10 +1,12 @@
 /**
- * Admin authentication — 
+ * Admin authentication
  */
 
 const AUTH_API = '/api/auth';
 const TOKEN_KEY = 'glasswater_admin_token';
+const TOKEN_TIME_KEY = 'glasswater_admin_token_time';
 const LOCKOUT_KEY = 'glasswater_admin_lockout';
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 /**
  * Attempts to log in via the server API endpoint.
@@ -14,7 +16,6 @@ const LOCKOUT_KEY = 'glasswater_admin_lockout';
 export async function login(password: string, storedHash?: string): Promise<{ success: true } | { success: false; error: string }> {
   let apiError: string | null = null;
 
-  // ── Try server API first ──────────────────────────────────
   try {
     const res = await fetch(AUTH_API, {
       method: 'POST',
@@ -22,31 +23,27 @@ export async function login(password: string, storedHash?: string): Promise<{ su
       body: JSON.stringify({ password }),
     });
 
-    // Safely parse the response — the server may return HTML on 500 errors
     let data: { token?: string; error?: string } = {};
     const contentType = res.headers.get('Content-Type') || '';
     if (contentType.includes('application/json')) {
       try {
         data = await res.json();
       } catch {
-        // JSON parse failed — likely an HTML error page
         apiError = `Server returned an unexpected response (HTTP ${res.status}). Please check the API configuration.`;
       }
     } else {
-      // Non-JSON response — read text for debugging
       const text = await res.text().catch(() => '');
       console.error(`[Glasswater Auth] Non-JSON response (${res.status}):`, text.slice(0, 200));
       apiError = `Server is not responding correctly (HTTP ${res.status}).`;
     }
 
-    // Server returned a valid JSON response with a token
     if (!apiError && res.ok && data.token) {
       sessionStorage.setItem(TOKEN_KEY, data.token);
+      sessionStorage.setItem(TOKEN_TIME_KEY, Date.now().toString());
       sessionStorage.removeItem(LOCKOUT_KEY);
       return { success: true };
     }
 
-    // Server returned a valid JSON error
     if (!apiError && data.error) {
       apiError = data.error;
     }
@@ -55,25 +52,22 @@ export async function login(password: string, storedHash?: string): Promise<{ su
     apiError = 'Unable to reach the authentication server.';
   }
 
-  // ── Server failed — try client-side fallback ──────────────
   if (apiError && storedHash) {
     try {
       const submittedHash = await sha256(password);
       if (submittedHash === storedHash) {
-        // Generate a client-side token so the session works offline
         const fallbackToken = 'client-' + btoa(Date.now().toString(36) + Math.random().toString(36));
         sessionStorage.setItem(TOKEN_KEY, fallbackToken);
+        sessionStorage.setItem(TOKEN_TIME_KEY, Date.now().toString());
         sessionStorage.removeItem(LOCKOUT_KEY);
         return { success: true };
       }
-      // Wrong password even against stored hash
       apiError = 'Invalid password. Please try again.';
     } catch (err) {
       console.error('[Glasswater Auth] SHA-256 hashing failed:', err);
     }
   }
 
-  // ── Track failed attempts ─────────────────────────────────
   if (apiError) {
     const lockoutData = sessionStorage.getItem(LOCKOUT_KEY);
     let attempts = 1;
@@ -114,10 +108,26 @@ async function sha256(message: string): Promise<string> {
 
 export function logout() {
   sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_TIME_KEY);
 }
 
 export function isAuthenticated(): boolean {
-  return !!sessionStorage.getItem(TOKEN_KEY);
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  if (!token) return false;
+  
+  // Check session age — expire after 30 minutes of inactivity
+  const tokenTime = sessionStorage.getItem(TOKEN_TIME_KEY);
+  if (tokenTime) {
+    const elapsed = Date.now() - parseInt(tokenTime, 10);
+    if (elapsed > SESSION_TIMEOUT) {
+      logout();
+      return false;
+    }
+  }
+  
+  // Refresh timestamp on activity
+  sessionStorage.setItem(TOKEN_TIME_KEY, Date.now().toString());
+  return true;
 }
 
 export function isLockedOut(): { locked: boolean; remainingSeconds: number } {
