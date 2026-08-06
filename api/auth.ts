@@ -1,5 +1,5 @@
 /**
- * Vercel Edge Function — Admin Authentication
+ * Vercel Serverless Function — Admin Authentication
  * 
  * POST /api/auth
  * Body: { password: string }
@@ -10,67 +10,6 @@
  *   JWT_SECRET         — Random secret for signing JWTs
  */
 
-interface Env {
-  ADMIN_PASSWORD_HASH: string;
-  JWT_SECRET: string;
-}
-
-export async function onRequest({ request, env }: { request: Request; env: Env }) {
-  // Only accept POST
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  const { password } = await request.json() as { password?: string };
-
-  if (!password || typeof password !== 'string' || password.length === 0) {
-    return new Response(JSON.stringify({ error: 'Password is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Hash the submitted password
-  const submittedHash = await sha256(password);
-
-  // Compare against stored hash
-  const storedHash = env.ADMIN_PASSWORD_HASH;
-  if (!storedHash) {
-    return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  if (submittedHash !== storedHash) {
-    return new Response(JSON.stringify({ error: 'Invalid password. Please try again.' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Create a JWT-like token (simplified — uses HMAC-SHA256)
-  const secret = env.JWT_SECRET;
-  if (!secret) {
-    return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  const token = await createToken(secret);
-
-  return new Response(JSON.stringify({ token }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-// ── Crypto helpers (Edge-compatible — uses Web Crypto API) ──
-
 async function sha256(message: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(message);
@@ -79,7 +18,6 @@ async function sha256(message: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Pure JS base64 — zero browser API dependencies, works everywhere (Edge, Workers, Node)
 const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 function base64Encode(str: string): string {
@@ -144,4 +82,40 @@ async function createToken(secret: string): Promise<string> {
   const signatureB64 = base64UrlEncode(new Uint8Array(signature));
 
   return `${signingInput}.${signatureB64}`;
+}
+
+export default async function handler(req: any, res: any) {
+  // Only accept POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { password } = req.body || {};
+
+  if (!password || typeof password !== 'string' || password.length === 0) {
+    return res.status(400).json({ error: 'Password is required' });
+  }
+
+  // Hash the submitted password
+  const submittedHash = await sha256(password);
+
+  // Compare against stored hash
+  const storedHash = process.env.ADMIN_PASSWORD_HASH;
+  if (!storedHash) {
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  if (submittedHash !== storedHash) {
+    return res.status(401).json({ error: 'Invalid password. Please try again.' });
+  }
+
+  // Create a JWT-like token
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  const token = await createToken(secret);
+
+  return res.status(200).json({ token });
 }
